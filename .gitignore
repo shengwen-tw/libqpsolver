@@ -1,0 +1,4 @@
+qp_solver
+*.d
+*.sw*
+*.o
