@@ -1,50 +1,33 @@
 #include <stdio.h>
 #include <mkl.h>
 #include <mkl_lapacke.h>
-
-void print_matrix(float *mat, int r, int c)
-{
-	int i, j;
-	for(i = 0; i < r; i++) {
-		for(j = 0; j < c; j++) {
-			printf("%f ", mat[i * r + j]);
-		}
-		printf("\n");
-	}
-}
+#include "libqpsolver.h"
+#include "matrix.h"
 
 int main(void)
 {
 	/* solve Ax = b */
-	float A[3*3] = {3, 5, 2,
-			2, 1, 3,
-			4, 3, 2};
-	int A_size = 3;
+	DECLARE_MATRIX(A, 3, 3,
+		       (3, 5, 2,
+		        2, 1, 3,
+		        4, 3, 2));
+	PRINT_MATRIX(A);
 
-	float b[2*3] = {57, 23,
-	 		22, 12,
-			41, 84};
-	int b_col = 3;
+	DECLARE_MATRIX(B, 3, 2,
+		       (57, 23,
+		        22, 12,
+		        41, 84));
+	PRINT_MATRIX(B);
 
-	int ipiv[3] = {0};
+	DECLARE_MATRIX(X, 3, 2,
+		       (0, 0,
+		        0, 0,
+			0, 0));
 
-	printf("A matrix:\n");
-	print_matrix(A, 3, 3);
+	int pivots[3] = {0};
 
-	printf("\nb matrix:\n");
-	print_matrix(b, 3, 2);
-
-	LAPACKE_sgesv(LAPACK_COL_MAJOR,
-			      A_size,
-			      b_col,
-			      A,
-			      A_size,
-			      ipiv,
-			      b,
-			      b_col);
-
-	printf("\nsolve Ax=b\n");
-	print_matrix(b, 3, 2);
+	solver_linear_system(&A, &X, &B, pivots);
+	PRINT_MATRIX(X);
 
 	return 0;
 }

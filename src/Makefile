@@ -7,13 +7,14 @@ MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
 	$(MKL_PATH)/lib/intel64/libmkl_core.so
 
 CFLAGS=
-CFLAGS+=-O2 -Wall -g
+CFLAGS+=-O3 -Wall -g
 
 LDFLAGS=-lm
 
 CFLAGS+=-I$(MKL_PATH)/include
 
-SRC=main.c
+SRC=main.c \
+	matrix.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
