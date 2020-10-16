@@ -46,7 +46,32 @@ void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb)
 {
 }
 
-bool qp_solve_start(qp_t *qp)
+int qp_solve_start(qp_t *qp)
 {
-	return true;
+	if(qp->x == NULL) return QP_ERROR_NO_OPTIMIZATION_VARIABLE;
+	if(qp->P == NULL) return QP_ERROR_NO_OBJECTIVE_FUNCTION;
+	if(qp->A == NULL && qp->b != NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
+	if(qp->A != NULL && qp->b == NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
+
+	/* no constraint optimization */
+	if((qp->A == NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
+		qp_solve_no_constraint_problem(qp);
+	}
+
+	/* equality constrained optmization */
+	if((qp->A != NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
+		qp_solve_equality_constraint_problem(qp);
+	}
+
+	/* inequality constrained optimization */
+	if((qp->A == NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
+		qp_solve_inequality_constraint_problem(qp);
+	} 
+
+	/* equality-inequality constrained optimization */
+	if((qp->A != NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
+		qp_solve_all_constraints_problem(qp);
+	}
+
+	return QP_SUCCESS_SOLVED;
 }
