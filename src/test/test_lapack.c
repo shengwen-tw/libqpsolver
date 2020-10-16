@@ -35,9 +35,10 @@ int main(void)
 	printf("\nsolve matrix inversion:\n");
 
 	DECLARE_MATRIX(M, 3, 3,
-		       ( 1,  0, 0,
-		         0,  1, 0,
-		         0,  0, 1));
+		       ( 1,  0,  2,
+		        -1,  5,  0,
+		         0,  3, -9));
+
 	PRINT_MATRIX(M);
 
 	DECLARE_MATRIX(M_inv, 3, 3,

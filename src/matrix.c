@@ -16,7 +16,11 @@ void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivots)
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots)
 {
 	*mat_inv = *mat;
-	LAPACKE_sgetri(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->data,
+
+	LAPACKE_sgetrf(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->column, mat_inv->data,
+		       mat_inv->column, pivots);
+
+	LAPACKE_sgetri(LAPACK_ROW_MAJOR, mat_inv->row,  mat_inv->data,
 		       mat_inv->column, pivots);
 }
 

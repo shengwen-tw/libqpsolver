@@ -6,7 +6,7 @@ MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
 	$(MKL_PATH)/lib/intel64/libmkl_core.so
 
 CFLAGS=
-CFLAGS+=-O3 #-Wall -g
+CFLAGS+=-O3 -Wall -g
 
 LDFLAGS=-lm
 
