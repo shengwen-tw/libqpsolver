@@ -1,4 +1,5 @@
 qp_solver
+test_lapack
 *.d
 *.sw*
 *.o
