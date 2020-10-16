@@ -14,6 +14,16 @@
 		.column = _column \
 	}
 
+/* matrix initialization */
+#define VECTOR_ARGS(...) __VA_ARGS__
+#define DECLARE_VECTOR(name, _row, _column, ...) \
+	FLOAT name##_data[_row * _column] = {VECTOR_ARGS __VA_ARGS__}; \
+	vector_t name = { \
+		.data = name##_data, \
+		.row = _row, \
+		.column = _column \
+	}
+
 /* matrix debug print wrapper*/
 #define PRINT_MATRIX(mat) \
 	print_matrix(#mat, &mat)
@@ -26,7 +36,8 @@ typedef struct {
 
 typedef struct {
 	FLOAT *data;
-	int size;
+	int row;
+	int column;
 } vector_t;
 
 void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);

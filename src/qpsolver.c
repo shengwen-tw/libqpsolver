@@ -31,6 +31,7 @@ void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb)
 
 /*static*/ void qp_solve_no_constraint_problem(qp_t *qp)
 {
+	/* x = H \ (-f) */
 }
 
 /*static*/ void qp_solve_all_constraints_problem(qp_t *qp)

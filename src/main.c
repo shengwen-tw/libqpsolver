@@ -3,31 +3,27 @@
 #include <mkl_lapacke.h>
 #include "libqpsolver.h"
 #include "matrix.h"
+#include "qpsolver.h"
 
 int main(void)
 {
-	/* solve Ax = b */
-	DECLARE_MATRIX(A, 3, 3,
-		       (3, 5, 2,
-		        2, 1, 3,
-		        4, 3, 2));
-	PRINT_MATRIX(A);
+	/* quadratic programming */
+	qp_t qp;
 
-	DECLARE_MATRIX(B, 3, 2,
-		       (57, 23,
-		        22, 12,
-		        41, 84));
-	PRINT_MATRIX(B);
+	DECLARE_VECTOR(x, 2, 1,
+		       (0,
+			0));
 
-	DECLARE_MATRIX(X, 3, 2,
-		       (0, 0,
-		        0, 0,
-			0, 0));
+	DECLARE_MATRIX(P, 2, 2,
+		       (+1, -1,
+		        -1, +2));
+	DECLARE_VECTOR(q, 2, 1,
+		       (-2,
+			-6));
 
-	int pivots[3] = {0};
-
-	solver_linear_system(&A, &X, &B, pivots);
-	PRINT_MATRIX(X);
+	qp_solve_set_optimization_variable(&qp, &x);
+	qp_solve_set_cost_function(&qp, &P, &q, NULL);
+	qp_solve_start(&qp);
 
 	return 0;
 }
