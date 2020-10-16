@@ -13,6 +13,13 @@ void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivots)
 		      A->data, A->column, pivots, X->data, X->column);
 }
 
+void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots)
+{
+	*mat_inv = *mat;
+	LAPACKE_sgetri(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->data,
+		       mat_inv->column, pivots);
+}
+
 void print_matrix(char *prompt, matrix_t *mat)
 {
 	printf("%s = \n", prompt);
