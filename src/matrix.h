@@ -15,7 +15,6 @@
 	}
 
 /* matrix debug print wrapper*/
-#define _PRINT
 #define PRINT_MATRIX(mat) \
 	print_matrix(#mat, &mat)
 

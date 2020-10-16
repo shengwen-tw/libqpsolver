@@ -14,7 +14,8 @@ LDFLAGS=-lm
 CFLAGS+=-I$(MKL_PATH)/include
 
 SRC=main.c \
-	matrix.c
+	matrix.c \
+	qpsolver.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
