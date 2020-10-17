@@ -8,6 +8,14 @@
 	qp_t name; \
 	qp_init(&name);
 
+#if VERBOSE == 0
+#define VERBOSE_PRINT(...)
+#define VERBOSE_PRINT_MATRIX(...)
+#else
+#define VERBOSE_PRINT(...) printf(__VA_ARGS__)
+#define VERBOSE_PRINT_MATRIX PRINT_MATRIX
+#endif
+
 enum {
 	QP_SUCCESS_SOLVED,
 	QP_ERROR_NO_OPTIMIZATION_VARIABLE,

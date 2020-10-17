@@ -8,7 +8,7 @@ MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
 
 CFLAGS=
 CFLAGS+=-O3 -Wall -g
-CFLAGS+=-DVERBOSE #turn on for debug print messages
+CFLAGS+=-DVERBOSE=0
 
 LDFLAGS=-lm
 

@@ -24,6 +24,10 @@
 		.column = _column \
 	}
 
+/* access matrix element with row and column index */
+#define MATRIX_DATA(mat_ptr, r, c) \
+	(mat_ptr)->data[(r * (mat_ptr)->column) + c]
+
 /* matrix debug print wrapper*/
 #define PRINT_MATRIX(mat) \
 	print_matrix(#mat, &mat)
