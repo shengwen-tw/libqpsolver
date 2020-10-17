@@ -139,7 +139,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	VERBOSE_PRINT_MATRIX(KKT);
 
 	/* construct kkt solution vector */
-	int kkt_sol_row = qp->x->row;
+	int kkt_sol_row = qp->x->row + qp->b->row;
 	int kkt_sol_column = 1;
 	FLOAT *kkt_sol_data = (FLOAT *)malloc(sizeof(FLOAT) * kkt_sol_row * kkt_sol_column);
 	vector_t kkt_sol = {
