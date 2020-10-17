@@ -1,9 +1,20 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <mkl.h>
 #include <mkl_lapacke.h>
 #include "libqpsolver.h"
 #include "matrix.h"
 #include "qpsolver.h"
+
+double time(void)
+{
+	static int sec = -1;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+
+	if (sec < 0) sec = tv.tv_sec;
+	return (tv.tv_sec - sec) + 1.0e-6 * tv.tv_usec;
+}
 
 int main(void)
 {
@@ -37,10 +48,15 @@ int main(void)
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
 	qp_solve_set_equality_constraints(&qp, &A, &b);
+
+	double start_time = time();
 	qp_solve_start(&qp);
+	double end_time = time();
 
 	printf("the optimal solution of the problem is:\n");
 	PRINT_MATRIX(x);
+
+	printf("run time: %lf seconds\n", end_time - start_time);
 
 	return 0;
 }
