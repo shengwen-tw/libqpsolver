@@ -26,7 +26,7 @@ int main(void)
 
 	int pivots1[3] = {0};
 
-	solver_linear_system(&A, &X, &B, pivots1);
+	solve_linear_system(&A, &X, &B, pivots1);
 
 	PRINT_MATRIX(A);
 	PRINT_MATRIX(B);

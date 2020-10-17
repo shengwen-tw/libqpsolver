@@ -1,5 +1,18 @@
+#include <stdlib.h>
 #include <stdbool.h>
 #include "qpsolver.h"
+
+void qp_init(qp_t *qp)
+{
+	qp->x = NULL;
+	qp->P = NULL;
+	qp->q = NULL;
+	qp->r = NULL;
+	qp->A = NULL;
+	qp->b = NULL;
+	qp->lb = NULL;
+	qp->ub = NULL;
+}
 
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
 {
@@ -31,19 +44,35 @@ void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb)
 
 /*static*/ void qp_solve_no_constraint_problem(qp_t *qp)
 {
-	/* x = H \ (-f) */
+	printf("identify quadratic programming problem without any constraints\n");
+
+	/* the closed form solution is givem by the lagrangian multiplier, we only
+	 * need the solve the linear system of Px = -q */
+
+	/* construct -q vector */
+	int r;
+	for(r = 0; r < qp->q->row; r++) {
+		qp->q->data[r] *= -1;
+	}
+
+	/* solve lagrangian system */
+	int *pivots = (int *)malloc(sizeof(int) * qp->P->row);
+	solve_linear_system(qp->P, qp->x, qp->q, pivots);
 }
 
 /*static*/ void qp_solve_all_constraints_problem(qp_t *qp)
 {
+	printf("identify qudratic programming problem with equality and inequality constraints\n");
 }
 
 /*static*/ void qp_solve_equality_constraint_problem(qp_t *qp)
 {
+	printf("identify qudratic programming problem with equality constraint\n");
 }
 
 /*static*/ void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
+	printf("identify qudratic programming problem with inequality constraint\n");
 }
 
 int qp_solve_start(qp_t *qp)

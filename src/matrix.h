@@ -34,13 +34,9 @@ typedef struct {
 	int column;
 } matrix_t;
 
-typedef struct {
-	FLOAT *data;
-	int row;
-	int column;
-} vector_t;
+typedef matrix_t vector_t;
 
-void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);
+void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots);
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 

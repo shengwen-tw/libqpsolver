@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include "matrix.h"
 
+#define DECLARE_QP_PROBLEM(name) \
+	qp_t name; \
+	qp_init(&name);
+
 enum {
 	QP_SUCCESS_SOLVED,
 	QP_ERROR_NO_OPTIMIZATION_VARIABLE,
@@ -29,6 +33,7 @@ typedef struct {
 	vector_t *ub;
 } qp_t;
 
+void qp_init(qp_t *qp);
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x);
 void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r);
 void qp_solve_set_equality_constraints(qp_t *qp, matrix_t *A, vector_t *b);

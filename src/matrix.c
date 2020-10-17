@@ -3,7 +3,7 @@
 #include <mkl_lapacke.h>
 #include "matrix.h"
 
-void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivots)
+void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivots)
 {
 	memcpy(X->data, B->data, sizeof(FLOAT) * X->row * X->column);
 

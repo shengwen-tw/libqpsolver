@@ -8,7 +8,7 @@
 int main(void)
 {
 	/* quadratic programming */
-	qp_t qp;
+	DECLARE_QP_PROBLEM(qp);
 
 	DECLARE_VECTOR(x, 2, 1,
 		       (0,
@@ -24,6 +24,8 @@ int main(void)
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
 	qp_solve_start(&qp);
+
+	PRINT_MATRIX(x);
 
 	return 0;
 }
