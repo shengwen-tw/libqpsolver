@@ -42,6 +42,7 @@ typedef struct {
 
 void solver_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots);
+void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 
 void print_matrix(char *prompt, matrix_t *mat);
 
