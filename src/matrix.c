@@ -32,6 +32,24 @@ void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 		    mat_result->column);
 }
 
+void matrix_scaling(float scaler, matrix_t *mat)
+{
+	int r, c;
+	for(r = 0; r < mat->row; r++) {
+		for(c = 0; c < mat->column; c++) {
+			MATRIX_DATA(mat, r, c) *= scaler;
+		}
+	}
+}
+
+void vector_scaling(float scaler, vector_t *vec)
+{
+	int r;
+	for(r = 0; r < vec->row; r++) {
+		MATRIX_DATA(vec, r, 0) *= scaler;
+	}
+}
+
 void vector_copy(vector_t *dest, vector_t *src)
 {
 	int r;
