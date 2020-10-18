@@ -1,4 +1,5 @@
 #include <string.h>
+#include <math.h>
 #include <mkl.h>
 #include <mkl_lapacke.h>
 #include "matrix.h"
@@ -29,6 +30,22 @@ void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 		    mat_result->column, mat2->row, 1, mat1->data, mat2->row,
 		    mat2->data, mat_result->column, 0, mat_result->data,
 		    mat_result->column);
+}
+
+float vector_residual(vector_t *vec1, vector_t *vec2)
+{
+	//TODO: check dimensions
+
+	float sum_of_squared = 0;
+	float diff;
+
+	int r;
+	for(r = 0; r < vec1->row; r++) {
+		diff = MATRIX_DATA(vec1, r, 0) - MATRIX_DATA(vec2, r, 0);
+		sum_of_squared += diff * diff;
+	}
+
+	return sqrt(sum_of_squared);
 }
 
 void print_matrix(char *prompt, matrix_t *mat)

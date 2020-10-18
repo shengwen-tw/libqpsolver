@@ -12,6 +12,10 @@ void qp_init(qp_t *qp)
 	qp->b = NULL;
 	qp->lb = NULL;
 	qp->ub = NULL;
+
+	qp->eps = 1e-3;
+	qp->max_iters = 25;
+	qp->iters = 0;
 }
 
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
@@ -164,9 +168,98 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	free(qb_vec.data);
 }
 
-/*static*/ void qp_solve_inequality_constraint_problem(qp_t *qp)
+static void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
+
+	int r;
+	int *pivots = (int *)malloc(sizeof(int) * qp->P->row);
+
+	FLOAT *x_last_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
+	vector_t x_last = {
+		.data = x_last_data,
+		.row = qp->x->row,
+		.column = qp->x->column
+	};
+	
+	//TODO: implement vector copy function
+	for(r = 0; r < x_last.row; r++) {
+		MATRIX_DATA(&x_last, r, 0) = MATRIX_DATA(qp->x, r, 0);
+	}
+
+	/* calculate netwon's step delta_x = -D^2[f(x)]^-1 * D[f(x)] */
+	FLOAT *H_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
+	matrix_t H_inv = {
+		.data = H_inv_data,
+		.row = qp->P->row,
+		.column = qp->P->column
+	};
+
+	matrix_inverse(qp->P, &H_inv, pivots);
+	
+	FLOAT *Jx_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
+	matrix_t Jx = {
+		.data = Jx_data,
+		.row = qp->x->row,
+		.column = qp->x->column
+	};
+
+	FLOAT *newton_step_data =
+		(FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
+	vector_t newton_step = {
+		.data = newton_step_data,
+		.row = qp->x->row,
+		.column = qp->x->column
+	};
+
+	while(qp->iters < qp->max_iters) {
+		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
+	
+		//TODO: implement vector copy function
+		for(r = 0; r < x_last.row; r++) {
+			MATRIX_DATA(&x_last, r, 0) = MATRIX_DATA(qp->x, r, 0);
+		}
+
+		//D[f(x)] = Px + r
+		matrix_multiply(qp->P, qp->x, &Jx);
+		for(r = 0; r < qp->x->row; r++) {
+			MATRIX_DATA(&Jx, r, 0) += MATRIX_DATA(qp->q, r, 0);
+		}
+
+		//calculate newton's step
+		matrix_multiply(&H_inv, &Jx, &newton_step);
+
+		//VERBOSE_PRINT_MATRIX(H_inv);
+		//VERBOSE_PRINT_MATRIX(Jx);
+
+		//TODO: implement vector negate function
+		for(r = 0; r < newton_step.row; r++) {
+			MATRIX_DATA(&newton_step, r, 0) *= -1;
+		}
+		VERBOSE_PRINT_MATRIX(newton_step);
+
+		/* x(k+1) = x(k) + newton_step */
+		for(r = 0; r < qp->x->row; r++) {
+			MATRIX_DATA(qp->x, r, 0) += MATRIX_DATA(&newton_step, r, 0);
+		}
+		VERBOSE_PRINT_MATRIX(*qp->x);
+
+		qp->iters++;
+
+		/* exit if already converged */
+		FLOAT resid =  vector_residual(qp->x, &x_last);
+		VERBOSE_PRINT("residual: %f\n", resid);
+
+		VERBOSE_PRINT("---\n");
+
+		if(resid < qp->eps) {
+			break;
+		}
+	}
+
+	free(H_inv.data);
+	free(Jx.data);
+	free(newton_step.data);
 }
 
 int qp_solve_start(qp_t *qp)

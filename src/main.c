@@ -25,6 +25,7 @@ int main(void)
 	DECLARE_VECTOR(x, 2, 1,
                        (0,
                         0));
+	PRINT_MATRIX(x);
 
 	//objective function
 	DECLARE_MATRIX(P, 2, 2,
@@ -45,9 +46,21 @@ int main(void)
 	PRINT_MATRIX(A);
 	PRINT_MATRIX(b);
 
+	//inequality constraints
+	DECLARE_MATRIX(lb, 2, 1,
+                       (-20,
+                        -20));
+	DECLARE_MATRIX(ub, 2, 1,
+                       (20,
+                        20));
+	PRINT_MATRIX(lb);
+	PRINT_MATRIX(ub);
+
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
-	qp_solve_set_equality_constraints(&qp, &A, &b);
+//	qp_solve_set_equality_constraints(&qp, &A, &b);
+	qp_solve_set_lower_bound_inequality_constraints(&qp, &lb);
+	qp_solve_set_upper_bound_inequality_constraints(&qp, &ub);
 
 	double start_time = time();
 	qp_solve_start(&qp);
@@ -56,7 +69,9 @@ int main(void)
 	printf("the optimal solution of the problem is:\n");
 	PRINT_MATRIX(x);
 
-	printf("run time: %lf seconds\n", end_time - start_time);
+	printf("run time: %lf seconds\n"
+               "optimization took %d iterations\n",
+               end_time - start_time, qp.iters);
 
 	return 0;
 }

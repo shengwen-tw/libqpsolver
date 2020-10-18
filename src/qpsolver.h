@@ -39,6 +39,11 @@ typedef struct {
 	/* inequality constraints */
 	vector_t *lb;
 	vector_t *ub;
+
+	/* stop criterions */
+	FLOAT eps;
+	int max_iters;
+	int iters;
 } qp_t;
 
 void qp_init(qp_t *qp);
