@@ -43,6 +43,8 @@ typedef matrix_t vector_t;
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots);
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
+void vector_copy(vector_t *dest, vector_t *src);
+void vector_negate(vector_t *vec);
 float vector_residual(vector_t *vec1, vector_t *vec2);
 
 void print_matrix(char *prompt, matrix_t *mat);

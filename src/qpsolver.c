@@ -181,11 +181,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		.row = qp->x->row,
 		.column = qp->x->column
 	};
-	
-	//TODO: implement vector copy function
-	for(r = 0; r < x_last.row; r++) {
-		MATRIX_DATA(&x_last, r, 0) = MATRIX_DATA(qp->x, r, 0);
-	}
+	vector_copy(&x_last, qp->x);
 
 	/* calculate netwon's step delta_x = -D^2[f(x)]^-1 * D[f(x)] */
 	FLOAT *H_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
@@ -214,11 +210,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
-	
-		//TODO: implement vector copy function
-		for(r = 0; r < x_last.row; r++) {
-			MATRIX_DATA(&x_last, r, 0) = MATRIX_DATA(qp->x, r, 0);
-		}
+
+		//preseve for checking convergence
+		vector_copy(&x_last, qp->x);	
 
 		//D[f(x)] = Px + r
 		matrix_multiply(qp->P, qp->x, &Jx);
@@ -228,14 +222,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 		//calculate newton's step
 		matrix_multiply(&H_inv, &Jx, &newton_step);
-
+		vector_negate(&newton_step);
 		//VERBOSE_PRINT_MATRIX(H_inv);
 		//VERBOSE_PRINT_MATRIX(Jx);
-
-		//TODO: implement vector negate function
-		for(r = 0; r < newton_step.row; r++) {
-			MATRIX_DATA(&newton_step, r, 0) *= -1;
-		}
 		VERBOSE_PRINT_MATRIX(newton_step);
 
 		/* x(k+1) = x(k) + newton_step */

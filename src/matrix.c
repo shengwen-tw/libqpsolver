@@ -32,10 +32,24 @@ void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 		    mat_result->column);
 }
 
+void vector_copy(vector_t *dest, vector_t *src)
+{
+	int r;
+	for(r = 0; r < dest->row; r++) {
+		MATRIX_DATA(dest, r, 0) = MATRIX_DATA(src, r, 0);
+	}
+}
+
+void vector_negate(vector_t *vec)
+{
+	int r;
+	for(r = 0; r < vec->row; r++) {
+		MATRIX_DATA(vec, r, 0) *= -1;
+	}
+}
+
 float vector_residual(vector_t *vec1, vector_t *vec2)
 {
-	//TODO: check dimensions
-
 	float sum_of_squared = 0;
 	float diff;
 
