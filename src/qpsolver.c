@@ -175,6 +175,10 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	int r;
 	int *pivots = (int *)malloc(sizeof(int) * qp->P->row);
 
+	/* log barrier's parameter */
+	float t = 100.0f;
+
+	/* save previous optimization result */
 	FLOAT *x_last_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
 	vector_t x_last = {
 		.data = x_last_data,
@@ -183,19 +187,18 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	};
 	vector_copy(&x_last, qp->x);
 
-	/* calculate netwon's step delta_x = -D^2[f(x)]^-1 * D[f(x)] */
-	FLOAT *H_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
-	matrix_t H_inv = {
-		.data = H_inv_data,
+	/* calculate the inverted second derivative of the objective function */
+	FLOAT *D2_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
+	matrix_t D2_inv = {
+		.data = D2_inv_data,
 		.row = qp->P->row,
 		.column = qp->P->column
 	};
-
-	matrix_inverse(qp->P, &H_inv, pivots);
+	matrix_inverse(qp->P, &D2_inv, pivots);
 	
-	FLOAT *Jx_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	matrix_t Jx = {
-		.data = Jx_data,
+	FLOAT *D1_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
+	matrix_t D1 = {
+		.data = D1_data,
 		.row = qp->x->row,
 		.column = qp->x->column
 	};
@@ -214,20 +217,34 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		//preseve for checking convergence
 		vector_copy(&x_last, qp->x);	
 
-		//D[f(x)] = Px + r
-		matrix_multiply(qp->P, qp->x, &Jx);
+		/* calculate the first derivative of the log barrier function */
+		//TODO
+
+		/* calculate the firt derivative of the objective function *
+		 * D[f(x)] = Px + r                                        */
+		matrix_multiply(qp->P, qp->x, &D1);
+		//TODO: implment vector addition
 		for(r = 0; r < qp->x->row; r++) {
-			MATRIX_DATA(&Jx, r, 0) += MATRIX_DATA(qp->q, r, 0);
+			MATRIX_DATA(&D1, r, 0) += MATRIX_DATA(qp->q, r, 0);
 		}
 
-		//calculate newton's step
-		matrix_multiply(&H_inv, &Jx, &newton_step);
+		/* effected by the new objective function t*f(x) + sum(i=1,m){phi(x)} */
+		vector_scaling(t, &D1);
+		matrix_scaling(1.0 / t, &D2_inv);
+
+		/* first derivative of the new objective function */
+		//TODO
+
+		/* calculate the  newton's step          * 
+		 * newton_step = -D^2[f(x)]^-1 * D[f(x)] */
+		matrix_multiply(&D2_inv, &D1, &newton_step);
 		vector_negate(&newton_step);
-		//VERBOSE_PRINT_MATRIX(H_inv);
-		//VERBOSE_PRINT_MATRIX(Jx);
+		//VERBOSE_PRINT_MATRIX(D2_inv);
+		//VERBOSE_PRINT_MATRIX(D1);
 		VERBOSE_PRINT_MATRIX(newton_step);
 
-		/* x(k+1) = x(k) + newton_step */
+		/* update the optimization variable *
+		 * x(k+1) = x(k) + newton_step      */
 		for(r = 0; r < qp->x->row; r++) {
 			MATRIX_DATA(qp->x, r, 0) += MATRIX_DATA(&newton_step, r, 0);
 		}
@@ -235,19 +252,18 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 		qp->iters++;
 
-		/* exit if already converged */
 		FLOAT resid =  vector_residual(qp->x, &x_last);
 		VERBOSE_PRINT("residual: %f\n", resid);
-
 		VERBOSE_PRINT("---\n");
 
+		/* exit if already converged */
 		if(resid < qp->eps) {
 			break;
 		}
 	}
 
-	free(H_inv.data);
-	free(Jx.data);
+	free(D2_inv.data);
+	free(D1.data);
 	free(newton_step.data);
 }
 
