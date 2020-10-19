@@ -172,43 +172,35 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
-	int r, c;
-
 	/* log barrier's parameter */
 	float t = 100.0f;
 
 	/* save previous optimization result */
 	MALLOC_MATRIX(x_last, qp->x->row, qp->x->column);
 	vector_copy(&x_last, qp->x);
-
-	/* inverted second derivative of the objective function */
+	//inverted second derivative of the objective function */
 	MALLOC_MATRIX(D2_f0, qp->P->row, qp->P->column);
-
-	/* inverted second derivative of the objective function */
+	//inverted second derivative of the objective function */
 	MALLOC_MATRIX(D2_f0_inv, qp->P->row, qp->P->column);
-
-	/* first derivative of the objective function */
+	//first derivative of the objective function */
 	MALLOC_MATRIX(D1_f0, qp->x->row, qp->x->column);
-
-	/* newton step's vector */
-	MALLOC_VECTOR(newton_step, qp->x->row, qp->x->column);
-
-	/* first derivative of the sumation of the log barrier functions  */
+	//first derivative of the sumation of the log barrier functions  */
 	CALLOC_MATRIX(D1_phi, qp->x->row, qp->x->column);
-
-	/* transposed first derivative of the i-th inequality constraint function */
+	//transposed first derivative of the i-th inequality constraint function */
 	CALLOC_MATRIX(D1_fi_t, qp->x->row, qp->x->column);
-
-	/* D[f_i(x)] * D[f_i(x)].' */
+	//D[f_i(x)] * D[f_i(x)].' */
 	MALLOC_MATRIX(D1_fi_D1_fi_t, qp->x->row, qp->x->row);
-
-	/* second derivative of the summation of the log barrier functions */
+	//second derivative of the summation of the log barrier functions */
 	CALLOC_MATRIX(D2_phi, qp->x->row, qp->x->row);
+	//newton step's vector */
+	MALLOC_VECTOR(newton_step, qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	float f_i = 0;
 	float f_i_squred = 0;
 	float div_f_i_squared = 0;
+
+	int r, c;
 
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
@@ -347,11 +339,11 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	DELETE_MATRIX(D2_f0);
 	DELETE_MATRIX(D2_f0_inv);
 	DELETE_MATRIX(D1_f0);
-	DELETE_VECTOR(newton_step);
 	DELETE_MATRIX(D1_phi);
 	DELETE_MATRIX(D1_fi_t);
 	DELETE_MATRIX(D1_fi_D1_fi_t);
 	DELETE_MATRIX(D2_phi);
+	DELETE_VECTOR(newton_step);
 }
 
 int qp_solve_start(qp_t *qp)
