@@ -15,7 +15,7 @@ void qp_init(qp_t *qp)
 	qp->ub = NULL;
 
 	qp->eps = 1e-3;
-	qp->max_iters = 25;
+	qp->max_iters = 10000;
 	qp->iters = 0;
 }
 
@@ -172,8 +172,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
-	const float eps = 0.01; //for improving numerical stabilty
-
 	int r, c;
 
 	/* log barrier's parameter */
@@ -226,16 +224,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		for(r = 0; r < qp->lb->row; r++) {
 			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
 
-			MATRIX_DATA(&D1_phi, r, 0) += 
-				-(f_i / (MATRIX_DATA(qp->x, r, 0) + eps));
+			MATRIX_DATA(&D1_phi, r, 0) += f_i;
 		}
 
 		/* upper bound */
 		for(r = 0; r < qp->ub->row; r++) {
 			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
 
-			MATRIX_DATA(&D1_phi, r, 0) += 
-				-(f_i /( MATRIX_DATA(qp->x, r, 0) + eps));
+			MATRIX_DATA(&D1_phi, r, 0) += -f_i;
 		}		
 
 		/* affine inequality */
@@ -264,10 +260,10 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		}
 
 		/* upper bound */
-		matrix_transpose(qp->lb, &D1_fi_t);
-		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
+		matrix_transpose(qp->ub, &D1_fi_t);
+		matrix_multiply(qp->ub, &D1_fi_t, &D1_fi_D1_fi_t);
 		f_i_squred = 0;
-		for(r = 0; r < qp->lb->row; r++) {
+		for(r = 0; r < qp->ub->row; r++) {
 			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
 			f_i_squred += f_i * f_i;
 		}
