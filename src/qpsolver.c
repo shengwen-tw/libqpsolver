@@ -271,11 +271,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
-		//preseve for checking convergence
+		/* preseve last x for checking convergence */
 		vector_copy(&x_last, qp->x);	
 
-		/* calculate the first derivative of the log barrier function */
-		//lower bound
+		/*==============================================================*
+		 * 1.calculate the first derivative of the log barrier function *
+		 *==============================================================*/
+
+		/* lower bound */
 		for(r = 0; r < qp->lb->row; r++) {
 			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
 
@@ -283,7 +286,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 				+(f_i / (MATRIX_DATA(qp->x, r, 0) + eps));
 		}
 
-		//upper bound
+		/* upper bound */
 		for(r = 0; r < qp->ub->row; r++) {
 			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
 
@@ -291,12 +294,16 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 				-(f_i /( MATRIX_DATA(qp->x, r, 0) + eps));
 		}		
 
-		//affine inequality: TODO
+		/* affine inequality */
+		//TODO
 
 		VERBOSE_PRINT_MATRIX(D1_phi);
 
-		/* calculate the second derivative of the log barrier function */
-		//lower bound
+		/*===============================================================*
+		 * 2.calculate the second derivative of the log barrier function *
+		 *===============================================================*/
+
+		/* lower bound */
 		matrix_transpose(qp->lb, &D1_fi_t);
 		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
 		f_i_squred = 0;
@@ -312,7 +319,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			}
 		}
 
-		//upper bound
+		/* upper bound */
 		matrix_transpose(qp->lb, &D1_fi_t);
 		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
 		f_i_squred = 0;
@@ -334,23 +341,25 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		VERBOSE_PRINT_MATRIX(D2_phi);
 		VERBOSE_PRINT_MATRIX(D2_phi_inv);
 
-		/* calculate the newton step of the log barrier functions */
+		/* calculate newton step of the log barrier functions */
 		matrix_multiply(&D1_phi, &D2_phi_inv, &log_barrier_newton_step);
 		VERBOSE_PRINT_MATRIX(log_barrier_newton_step);
 
-		/* calculate the firt derivative of the objective function *
-		 * D[f(x)] = Px + r                                        */
+		/*=============================================================*
+		 * 3. calculate the firt derivative of the objective function: *
+		 *=============================================================*/
 		matrix_multiply(qp->P, qp->x, &D1_f0);
 		for(r = 0; r < qp->x->row; r++) {
 			MATRIX_DATA(&D1_f0, r, 0) += MATRIX_DATA(qp->q, r, 0);
 		}
 
-		/* effected by the new objective function t*f(x) + sum(i=1,m){phi(x)} */
+		/* construct t*f(x) (reformulate the problem with log barrier terms) */
 		vector_scaling(t, &D1_f0);
 		matrix_scaling(1.0 / t, &D2_f0_inv);
 
-		/* calculate the  newton's step          * 
-		 * newton_step = -D^2[f(x)]^-1 * D[f(x)] */
+		/*=================================*
+		 * 4. calculate the  newton's step *
+		 *=================================*/ 
 		matrix_multiply(&D2_f0_inv, &D1_f0, &newton_step);
 		for(r = 0; r < newton_step.row; r++) {
 			MATRIX_DATA(&newton_step, r, 0) +=
@@ -361,8 +370,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		VERBOSE_PRINT_MATRIX(D1_f0);
 		VERBOSE_PRINT_MATRIX(newton_step);
 
-		/* update the optimization variable *
-		 * x(k+1) = x(k) + newton_step      */
+		/*=====================================*
+		 * 5. update the optimization variable *
+		 *=====================================*/
 		for(r = 0; r < qp->x->row; r++) {
 			MATRIX_DATA(qp->x, r, 0) += MATRIX_DATA(&newton_step, r, 0);
 		}

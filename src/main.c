@@ -48,11 +48,11 @@ int main(void)
 
 	//inequality constraints
 	DECLARE_MATRIX(lb, 2, 1,
-                       (-20,
-                        -20));
+                       (1,
+                        1));
 	DECLARE_MATRIX(ub, 2, 1,
-                       (9,
-                        20));
+                       (1,
+                        1));
 	PRINT_MATRIX(lb);
 	PRINT_MATRIX(ub);
 
