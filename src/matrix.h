@@ -43,8 +43,10 @@ typedef matrix_t vector_t;
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivot);
 
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots);
+void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 void matrix_scaling(float scaler, matrix_t *mat);
+void matrix_transpose(matrix_t *mat, matrix_t *trans_mat);
 
 void vector_scaling(float scaler, vector_t *vec);
 void vector_copy(vector_t *dest, vector_t *src);

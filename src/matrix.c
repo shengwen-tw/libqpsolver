@@ -24,12 +24,36 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots)
 		       mat_inv->column, pivots);
 }
 
+void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
+{
+	int r, c;
+	for(r = 0; r < mat1->row; r++) {
+		for(c = 0; c < mat1->column; c++) {
+			MATRIX_DATA(mat_result, r, c) =
+				MATRIX_DATA(mat1, r, c) + MATRIX_DATA(mat2, r, c);
+		}
+	}
+}
+
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 {
 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, mat_result->row,
 		    mat_result->column, mat2->row, 1, mat1->data, mat2->row,
 		    mat2->data, mat_result->column, 0, mat_result->data,
 		    mat_result->column);
+}
+
+void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
+{
+	trans_mat->row = mat->column;
+	trans_mat->column = mat->row;
+
+	int r, c;
+	for(r = 0; r < mat->row; r++) {
+		for(c = 0; c < mat->column; c++) {
+			MATRIX_DATA(trans_mat, c, r) = MATRIX_DATA(mat, r, c);
+		}
+	}
 }
 
 void matrix_scaling(float scaler, matrix_t *mat)
