@@ -177,81 +177,35 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	int r, c;
 
 	/* log barrier's parameter */
-	float t = 2.0f;
+	float t = 100.0f;
 
 	/* save previous optimization result */
-	FLOAT *x_last_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	vector_t x_last = {
-		.data = x_last_data,
-		.row = qp->x->row,
-		.column = qp->x->column
-	};
+	MALLOC_MATRIX(x_last, qp->x->row, qp->x->column);
 	vector_copy(&x_last, qp->x);
 
 	/* inverted second derivative of the objective function */
-	FLOAT *D2_f0_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
-	matrix_t D2_f0 = {
-		.data = D2_f0_data,
-		.row = qp->P->row,
-		.column = qp->P->column
-	};
+	MALLOC_MATRIX(D2_f0, qp->P->row, qp->P->column);
 
 	/* inverted second derivative of the objective function */
-	FLOAT *D2_f0_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
-	matrix_t D2_f0_inv = {
-		.data = D2_f0_inv_data,
-		.row = qp->P->row,
-		.column = qp->P->column
-	};
+	MALLOC_MATRIX(D2_f0_inv, qp->P->row, qp->P->column);
 
 	/* first derivative of the objective function */
-	FLOAT *D1_f0_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	matrix_t D1_f0 = {
-		.data = D1_f0_data,
-		.row = qp->x->row,
-		.column = qp->x->column
-	};
+	MALLOC_MATRIX(D1_f0, qp->x->row, qp->x->column);
 
 	/* newton step's vector */
-	FLOAT *newton_step_data =
-		(FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	vector_t newton_step = {
-		.data = newton_step_data,
-		.row = qp->x->row,
-		.column = qp->x->column
-	};
+	MALLOC_VECTOR(newton_step, qp->x->row, qp->x->column);
 
 	/* first derivative of the sumation of the log barrier functions  */
-	FLOAT *D1_phi_data = (FLOAT *)calloc(qp->x->row * qp->x->column, sizeof(FLOAT));
-	matrix_t D1_phi = {
-		.data = D1_phi_data,
-		.row = qp->x->row,
-		.column = qp->x->column,
-	};
+	CALLOC_MATRIX(D1_phi, qp->x->row, qp->x->column);
 
 	/* transposed first derivative of the i-th inequality constraint function */
-	FLOAT *D1_fi_t_data = (FLOAT *)calloc(qp->x->row * qp->x->column, sizeof(FLOAT));
-	matrix_t D1_fi_t = {
-		.data = D1_fi_t_data,
-		.row = qp->x->row,
-		.column = qp->x->column,
-	};
+	CALLOC_MATRIX(D1_fi_t, qp->x->row, qp->x->column);
 
 	/* D[f_i(x)] * D[f_i(x)].' */
-	FLOAT *D1_fi_D1_fi_t_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->row);
-	matrix_t D1_fi_D1_fi_t = {
-		.data = D1_fi_D1_fi_t_data,
-		.row = qp->x->row,
-		.column = qp->x->row
-	};
+	MALLOC_MATRIX(D1_fi_D1_fi_t, qp->x->row, qp->x->row);
 
 	/* second derivative of the summation of the log barrier functions */
-	FLOAT *D2_phi_data = (FLOAT *)calloc(qp->x->row * qp->x->column, sizeof(FLOAT));
-	matrix_t D2_phi = {
-		.data = D2_phi_data,
-		.row = qp->x->row,
-		.column = qp->x->row,
-	};
+	CALLOC_MATRIX(D2_phi, qp->x->row, qp->x->row);
 
 	/* i-th inenquality constraint function */
 	float f_i = 0;
@@ -273,12 +227,12 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
 
 			MATRIX_DATA(&D1_phi, r, 0) += 
-				+(f_i / (MATRIX_DATA(qp->x, r, 0) + eps));
+				-(f_i / (MATRIX_DATA(qp->x, r, 0) + eps));
 		}
 
 		/* upper bound */
 		for(r = 0; r < qp->ub->row; r++) {
-			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
+			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
 
 			MATRIX_DATA(&D1_phi, r, 0) += 
 				-(f_i /( MATRIX_DATA(qp->x, r, 0) + eps));
@@ -298,7 +252,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
 		f_i_squred = 0;
 		for(r = 0; r < qp->lb->row; r++) {
-			f_i = MATRIX_DATA(qp->lb, r, 0);
+			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
 			f_i_squred += f_i * f_i;
 		}
 		div_f_i_squared = 1 / f_i_squred;
@@ -314,7 +268,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
 		f_i_squred = 0;
 		for(r = 0; r < qp->lb->row; r++) {
-			f_i = MATRIX_DATA(qp->lb, r, 0);
+			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
 			f_i_squred += f_i * f_i;
 		}
 		div_f_i_squared = 1 / f_i_squred;
@@ -348,9 +302,18 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		/*========================================================================*
 		 * 5. combine derivatives of objective function and log barrier functions *
 		 *========================================================================*/
+
+		/* first derivative */
 		for(r = 0; r < D1_f0.row; r++) {
 			for(c = 0; c < D1_f0.column; c++) {
 				MATRIX_DATA(&D1_f0, r, c) += MATRIX_DATA(&D1_phi, r, c);
+			}
+		}
+
+		/* second derivative */
+		for(r = 0; r < D2_f0.row; r++) {
+			for(c = 0; c < D2_f0.column; c++) {
+				MATRIX_DATA(&D2_f0, r, c) += MATRIX_DATA(&D2_phi, r, c);
 			}
 		}
 

@@ -14,15 +14,23 @@
 		.column = _column \
 	}
 
-/* matrix initialization */
-#define VECTOR_ARGS(...) __VA_ARGS__
-#define DECLARE_VECTOR(name, _row, _column, ...) \
-	FLOAT name##_data[_row * _column] = {VECTOR_ARGS __VA_ARGS__}; \
-	vector_t name = { \
+/* malloc new matrix */
+#define MALLOC_MATRIX(name, _row, _column) \
+	FLOAT *name##_data = (FLOAT *)malloc(sizeof(FLOAT) * _row * _column); \
+	matrix_t name = { \
 		.data = name##_data, \
 		.row = _row, \
 		.column = _column \
-	}
+	};
+
+/* calloc new matrix */
+#define CALLOC_MATRIX(name, _row, _column) \
+	FLOAT *name##_data = (FLOAT *)calloc(_row * _column, sizeof(FLOAT)); \
+	matrix_t name = { \
+		.data = name##_data, \
+		.row = _row, \
+		.column = _column \
+	};
 
 /* access matrix element with row and column index */
 #define MATRIX_DATA(mat_ptr, r, c) \
@@ -31,6 +39,12 @@
 /* matrix debug print wrapper*/
 #define PRINT_MATRIX(mat) \
 	print_matrix(#mat, &mat)
+
+#define DECLARE_VECTOR DECLARE_MATRIX
+#define MALLOC_VECTOR MALLOC_MATRIX
+#define CALLOC_VECTOR CALLOC_MATRIX
+#define VECTOR_DATA MATRIX_DATA
+#define PRINT_VECTOR PRINT_MATRIX
 
 typedef struct {
 	FLOAT *data;
