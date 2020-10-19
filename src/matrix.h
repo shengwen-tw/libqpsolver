@@ -32,6 +32,9 @@
 		.column = _column \
 	};
 
+#define DELETE_MATRIX(name) \
+	free(name.data)
+
 /* access matrix element with row and column index */
 #define MATRIX_DATA(mat_ptr, r, c) \
 	(mat_ptr)->data[(r * (mat_ptr)->column) + c]
@@ -43,6 +46,7 @@
 #define DECLARE_VECTOR DECLARE_MATRIX
 #define MALLOC_VECTOR MALLOC_MATRIX
 #define CALLOC_VECTOR CALLOC_MATRIX
+#define DELETE_VECTOR DELETE_MATRIX
 #define VECTOR_DATA MATRIX_DATA
 #define PRINT_VECTOR PRINT_MATRIX
 

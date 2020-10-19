@@ -11,6 +11,7 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	int *pivots = (int *)malloc(sizeof(int) * A->row);
 	LAPACKE_sgesv(LAPACK_ROW_MAJOR, A->row, X->column,
 		      A->data, A->column, pivots, X->data, X->column);
+	free(pivots);
 }
 
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
@@ -25,6 +26,7 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 
 	LAPACKE_sgetri(LAPACK_ROW_MAJOR, mat_inv->row,  mat_inv->data,
 		       mat_inv->column, pivots);
+	free(pivots);
 }
 
 void matrix_copy(matrix_t *dest, matrix_t *src)

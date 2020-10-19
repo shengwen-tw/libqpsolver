@@ -344,9 +344,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		}
 	}
 
-	free(D2_f0_inv.data);
-	free(D1_f0.data);
-	free(newton_step.data);
+	DELETE_MATRIX(D2_f0);
+	DELETE_MATRIX(D2_f0_inv);
+	DELETE_MATRIX(D1_f0);
+	DELETE_VECTOR(newton_step);
+	DELETE_MATRIX(D1_phi);
+	DELETE_MATRIX(D1_fi_t);
+	DELETE_MATRIX(D1_fi_D1_fi_t);
+	DELETE_MATRIX(D2_phi);
 }
 
 int qp_solve_start(qp_t *qp)
