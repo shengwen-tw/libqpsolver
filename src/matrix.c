@@ -24,6 +24,16 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots)
 		       mat_inv->column, pivots);
 }
 
+void matrix_copy(matrix_t *dest, matrix_t *src)
+{
+	int r, c;
+	for(r = 0; r < dest->row; r++) {
+		for(c = 0; c < dest->column; c++) {
+			MATRIX_DATA(dest, r, c) = MATRIX_DATA(src, r, c);
+		}
+	}
+}
+
 void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 {
 	int r, c;

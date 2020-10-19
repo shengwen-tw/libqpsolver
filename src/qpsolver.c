@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include "qpsolver.h"
 
 void qp_init(qp_t *qp)
@@ -107,7 +108,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	/* construct the KKT matrix */
 	int kkt_row = qp->P->row + qp->A->row;
 	int kkt_column = qp->P->column + qp->A->row;
-	FLOAT *KKT_data = (FLOAT *)malloc(sizeof(FLOAT) * kkt_row * kkt_column);
+	FLOAT *KKT_data = (FLOAT *)calloc(kkt_row * kkt_column, sizeof(FLOAT));
 	matrix_t KKT = {
 		.data = KKT_data,
 		.row = kkt_row,
@@ -211,14 +212,132 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		.column = qp->x->column
 	};
 
+	/* log barrier function of inequality constraints */
+	int log_barriers_row = qp->lb->row + qp->ub->row;
+	int log_barriers_column = 1;
+	FLOAT *log_barriers_data =
+		(FLOAT *)malloc(sizeof(FLOAT) * log_barriers_row * log_barriers_column);
+	vector_t log_barriers = {
+		.data = log_barriers_data,
+		.row = log_barriers_row,
+		.column = log_barriers_column,
+	};
+
+	int D1_phi_row = qp->lb->row + qp->ub->row;
+	int D1_phi_column = qp->x->row;
+	FLOAT *D1_phi_data = (FLOAT *)malloc(sizeof(FLOAT) * D1_phi_row * D1_phi_column);
+	matrix_t D1_phi = {
+		.data = D1_phi_data,
+		.row = D1_phi_row,
+		.column = D1_phi_column
+	};
+
+	/* inequality constraints with the form of Fx < c */
+	int F_row = qp->lb->row + qp->ub->row;
+	int F_column = qp->x->row;
+	FLOAT *F_data = (FLOAT *)malloc(sizeof(FLOAT) * F_row * F_column);
+	matrix_t F = {
+		.data = F_data,
+		.row = F_row,
+		.column = F_column
+	};
+	//lower bound
+	for(r = 0; r < qp->lb->row; r++) {
+		MATRIX_DATA(&F, r, r) = 1;
+	}
+	//upper bound
+	for(r = 0; r < qp->ub->row; r++) {
+		int _r = r + qp->lb->row;
+		MATRIX_DATA(&F, _r, r) = 1;
+	}
+	//affine inequality
+	//TODO
+	VERBOSE_PRINT_MATRIX(F);
+
+	/* F*trans(T), we use this to calculate the second derivative of the log barrier function */
+	FLOAT *Ft_data = (FLOAT *)malloc(sizeof(FLOAT) * F_row * F_column);
+	matrix_t Ft = {.data = Ft_data};
+	matrix_transpose(&F, &Ft);
+	VERBOSE_PRINT_MATRIX(Ft);
+
+	FLOAT *FFt_data = (FLOAT *)malloc(sizeof(FLOAT) * F_row * F_row);
+	matrix_t FFt = {
+		.data = FFt_data,
+		.row = F_row,
+		.column = F_row
+	};
+	matrix_multiply(&F, &Ft, &FFt);
+	VERBOSE_PRINT_MATRIX(FFt);
+
+	FLOAT *D2_phi_data = (FLOAT *)malloc(sizeof(FLOAT) * F_row * F_row);
+	matrix_t D2_phi = {
+		.data = D2_phi_data,
+		.row = F_row,
+		.column = F_row
+	};
+
+	FLOAT *D2_phi_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * F_row * F_row);
+	matrix_t D2_phi_inv = {
+		.data = D2_phi_inv_data,
+		.row = F_row,
+		.column = F_row
+	};
+
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
 		//preseve for checking convergence
 		vector_copy(&x_last, qp->x);	
 
-		/* calculate the first derivative of the log barrier function */
+		/* calculate the log barriers */
+		//lower bound
+		for(r = 0; r < qp->lb->row; r++) {
+			float log_barrier_i =
+				-log10f(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0));
+
+			MATRIX_DATA(&log_barriers, r, 0) = log_barrier_i;
+		}
+		//upper bound
+		for(r = 0; r < qp->ub->row; r++) {
+			int _r = (r + qp->lb->row);
+
+			float log_barrier_i =
+				-log10f(-MATRIX_DATA(qp->x, r, 0) + MATRIX_DATA(qp->ub, r, 0));
+
+			MATRIX_DATA(&log_barriers, _r, 0) = log_barrier_i;
+		}
+		//affine inequality constraints
 		//TODO
+		VERBOSE_PRINT_MATRIX(log_barriers);
+
+		/* calculate the first derivative of the log barrier function */
+		for(r = 0; r < qp->lb->row; r++) {
+			MATRIX_DATA(&D1_phi, r, r) = (1 / MATRIX_DATA(&log_barriers, r, 0));
+		}
+		for(r = 0; r < qp->ub->row; r++) {
+			int _r = r + qp->lb->row;
+			MATRIX_DATA(&D1_phi, _r, r) = (1 / MATRIX_DATA(&log_barriers, _r, 0));
+		}
+		VERBOSE_PRINT_MATRIX(D1_phi);
+
+		/* calculate the inverted second derivative of the log barrier function */
+		float div_sum_of_squared_log_barriers = 0;
+		for(r = 0; r < log_barriers.row; r++) {
+			float squared_log_barrier =
+				MATRIX_DATA(&log_barriers, r, 0) * MATRIX_DATA(&log_barriers, r, 0);
+
+			div_sum_of_squared_log_barriers += squared_log_barrier;
+		}
+		div_sum_of_squared_log_barriers = 1 / div_sum_of_squared_log_barriers;
+
+		matrix_copy(&D2_phi, &FFt);
+		matrix_scaling(div_sum_of_squared_log_barriers, &D2_phi);
+		VERBOSE_PRINT_MATRIX(D2_phi);
+
+		int *pivots = (int *)malloc(sizeof(int) * D2_phi_inv.row);
+		matrix_inverse(&D2_phi, &D2_phi_inv, pivots);
+		free(pivots);
+		VERBOSE_PRINT_MATRIX(D2_phi_inv);
 
 		/* calculate the firt derivative of the objective function *
 		 * D[f(x)] = Px + r                                        */
@@ -232,14 +351,11 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		vector_scaling(t, &D1);
 		matrix_scaling(1.0 / t, &D2_inv);
 
-		/* first derivative of the new objective function */
-		//TODO
-
 		/* calculate the  newton's step          * 
 		 * newton_step = -D^2[f(x)]^-1 * D[f(x)] */
 		matrix_multiply(&D2_inv, &D1, &newton_step);
 		vector_negate(&newton_step);
-		//VERBOSE_PRINT_MATRIX(D2_inv);
+		VERBOSE_PRINT_MATRIX(D2_inv);
 		//VERBOSE_PRINT_MATRIX(D1);
 		VERBOSE_PRINT_MATRIX(newton_step);
 
@@ -264,6 +380,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 	free(D2_inv.data);
 	free(D1.data);
+	free(D1_phi.data);
+	free(F.data);
+	free(Ft.data);
 	free(newton_step.data);
 }
 
