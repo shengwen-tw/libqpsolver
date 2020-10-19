@@ -177,7 +177,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	int r, c;
 
 	/* log barrier's parameter */
-	float t = 100.0f;
+	float t = 2.0f;
 
 	/* save previous optimization result */
 	FLOAT *x_last_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
@@ -189,14 +189,21 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	vector_copy(&x_last, qp->x);
 
 	/* inverted second derivative of the objective function */
+	FLOAT *D2_f0_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
+	matrix_t D2_f0 = {
+		.data = D2_f0_data,
+		.row = qp->P->row,
+		.column = qp->P->column
+	};
+
+	/* inverted second derivative of the objective function */
 	FLOAT *D2_f0_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->P->row * qp->P->column);
 	matrix_t D2_f0_inv = {
 		.data = D2_f0_inv_data,
 		.row = qp->P->row,
 		.column = qp->P->column
 	};
-	matrix_inverse(qp->P, &D2_f0_inv);
-	
+
 	/* first derivative of the objective function */
 	FLOAT *D1_f0_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
 	matrix_t D1_f0 = {
@@ -244,23 +251,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		.data = D2_phi_data,
 		.row = qp->x->row,
 		.column = qp->x->row,
-	};
-
-	/* inverted second derivative of the summation of the log barrier functions */
-	FLOAT *D2_phi_inv_data = (FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	matrix_t D2_phi_inv = {
-		.data = D2_phi_inv_data,
-		.row = qp->x->row,
-		.column = qp->x->row,
-	};
-
-	/* newton step vector of the log barrier functions */
-	FLOAT *log_barrier_newton_step_data =
-		(FLOAT *)malloc(sizeof(FLOAT) * qp->x->row * qp->x->column);
-	vector_t log_barrier_newton_step = {
-		.data = log_barrier_newton_step_data,
-		.row = qp->x->row,
-		.column = qp->x->column
 	};
 
 	/* i-th inenquality constraint function */
@@ -335,43 +325,48 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			}
 		}
 
-		//affine inequality: TODO
+		/* affine inequality */
+		//TODO
 
-		matrix_inverse(&D2_phi, &D2_phi_inv);
 		VERBOSE_PRINT_MATRIX(D2_phi);
-		VERBOSE_PRINT_MATRIX(D2_phi_inv);
 
-		/* calculate newton step of the log barrier functions */
-		matrix_multiply(&D1_phi, &D2_phi_inv, &log_barrier_newton_step);
-		VERBOSE_PRINT_MATRIX(log_barrier_newton_step);
-
-		/*=============================================================*
-		 * 3. calculate the firt derivative of the objective function: *
-		 *=============================================================*/
+		/*============================================================*
+		 * 3. calculate the firt derivative of the objective function *
+		 *============================================================*/
 		matrix_multiply(qp->P, qp->x, &D1_f0);
 		for(r = 0; r < qp->x->row; r++) {
 			MATRIX_DATA(&D1_f0, r, 0) += MATRIX_DATA(qp->q, r, 0);
 		}
-
-		/* construct t*f(x) (reformulate the problem with log barrier terms) */
 		vector_scaling(t, &D1_f0);
-		matrix_scaling(1.0 / t, &D2_f0_inv);
 
-		/*=================================*
-		 * 4. calculate the  newton's step *
-		 *=================================*/ 
-		matrix_multiply(&D2_f0_inv, &D1_f0, &newton_step);
-		for(r = 0; r < newton_step.row; r++) {
-			MATRIX_DATA(&newton_step, r, 0) +=
-				MATRIX_DATA(&log_barrier_newton_step, r, 0);
+		/*============================================================*
+		 * 4. calculate the second derivate of the objective function *
+		 *============================================================*/
+		matrix_copy(&D2_f0, qp->P);
+		matrix_scaling(t, &D2_f0);
+
+		/*========================================================================*
+		 * 5. combine derivatives of objective function and log barrier functions *
+		 *========================================================================*/
+		for(r = 0; r < D1_f0.row; r++) {
+			for(c = 0; c < D1_f0.column; c++) {
+				MATRIX_DATA(&D1_f0, r, c) += MATRIX_DATA(&D1_phi, r, c);
+			}
 		}
+
+		/*================================*
+		 * 6. calculate the newton's step *
+		 *================================*/
+		matrix_inverse(&D2_f0, &D2_f0_inv);
+		matrix_multiply(&D2_f0_inv, &D1_f0, &newton_step);
 		vector_negate(&newton_step);
+
 		VERBOSE_PRINT_MATRIX(D2_f0_inv);
 		VERBOSE_PRINT_MATRIX(D1_f0);
 		VERBOSE_PRINT_MATRIX(newton_step);
 
 		/*=====================================*
-		 * 5. update the optimization variable *
+		 * 7. update the optimization variable *
 		 *=====================================*/
 		for(r = 0; r < qp->x->row; r++) {
 			MATRIX_DATA(qp->x, r, 0) += MATRIX_DATA(&newton_step, r, 0);
