@@ -51,7 +51,7 @@ int main(void)
                        (-20,
                         -20));
 	DECLARE_MATRIX(ub, 2, 1,
-                       (20,
+                       (9,
                         20));
 	PRINT_MATRIX(lb);
 	PRINT_MATRIX(ub);

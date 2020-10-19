@@ -4,17 +4,20 @@
 #include <mkl_lapacke.h>
 #include "matrix.h"
 
-void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B, int *pivots)
+void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 {
 	memcpy(X->data, B->data, sizeof(FLOAT) * X->row * X->column);
 
+	int *pivots = (int *)malloc(sizeof(int) * A->row);
 	LAPACKE_sgesv(LAPACK_ROW_MAJOR, A->row, X->column,
 		      A->data, A->column, pivots, X->data, X->column);
 }
 
-void matrix_inverse(matrix_t *mat, matrix_t *mat_inv, int *pivots)
+void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 {
 	memcpy(mat_inv->data, mat->data, sizeof(FLOAT) * mat_inv->row * mat_inv->column);
+
+	int *pivots = (int *)malloc(sizeof(int) * mat->row);
 
 	//solve matrix inversion by LU decomposition
 	LAPACKE_sgetrf(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->column, mat_inv->data,
