@@ -14,7 +14,7 @@ void qp_init(qp_t *qp)
 	qp->lb = NULL;
 	qp->ub = NULL;
 
-	qp->eps = 1e-3;
+	qp->eps = 1e-6;
 	qp->max_iters = 10000;
 	qp->iters = 0;
 }
@@ -222,7 +222,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 		/* lower bound */
 		for(r = 0; r < qp->lb->row; r++) {
-			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
+			f_i = -(-MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0));
 
 			MATRIX_DATA(&D1_phi, r, 0) += f_i;
 		}
