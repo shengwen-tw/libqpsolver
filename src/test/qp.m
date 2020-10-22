@@ -5,12 +5,19 @@ P = [+1 -1;
 q = [-2;
      -6]
 
-A = []
-b = []
+A = [ 1 1;
+     -1 2;
+      2 1]
+b = [2;
+     2;
+     3]
+
+A_eq = []
+b_eq = []
 
 lb = [-1;
       -1];
 ub = [+1;
       +1];
 
-x = quadprog(P, q, [], [], A, b, lb, ub)
+x = quadprog(P, q, A, b, A_eq, b_eq, lb, ub)

@@ -9,8 +9,8 @@ void qp_init(qp_t *qp)
 	qp->P = NULL;
 	qp->q = NULL;
 	qp->r = NULL;
-	qp->A = NULL;
-	qp->b = NULL;
+	qp->A_eq = NULL;
+	qp->b_eq = NULL;
 	qp->lb = NULL;
 	qp->ub = NULL;
 
@@ -33,8 +33,8 @@ void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r)
 
 void qp_solve_set_equality_constraints(qp_t *qp, matrix_t *A, vector_t *b)
 {
-	qp->A = A;
-	qp->b = b;
+	qp->A_eq = A;
+	qp->b_eq = b;
 }
 
 void qp_solve_set_upper_bound_inequality_constraints(qp_t *qp, vector_t *ub)
@@ -45,6 +45,12 @@ void qp_solve_set_upper_bound_inequality_constraints(qp_t *qp, vector_t *ub)
 void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb)
 {
 	qp->lb = lb;
+}
+
+void qp_solve_set_affine_inequality_constraints(qp_t *qp, matrix_t *A, vector_t *b)
+{
+	qp->A = A;
+	qp->b = b;
 }
 
 static void qp_solve_no_constraint_problem(qp_t *qp)
@@ -83,7 +89,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	int r, c;
 
 	/* construct the [-q; b] matrix */
-	int qb_vec_row = qp->q->row + qp->b->row;
+	int qb_vec_row = qp->q->row + qp->b_eq->row;
 	int qb_vec_column = 1;
 	FLOAT *qb_vec_data = (FLOAT *)malloc(sizeof(FLOAT) * qb_vec_row * qb_vec_column);
 	vector_t qb_vec = {
@@ -98,16 +104,16 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 		MATRIX_DATA(&qb_vec, r, 0) = -MATRIX_DATA(qp->q, r, 0);
 	}
 	//copy b
-	for(r = 0; r < qp->b->row; r++) {
+	for(r = 0; r < qp->b_eq->row; r++) {
 		//copy b
 		MATRIX_DATA(&qb_vec, r + qp->q->row, 0) =
-			MATRIX_DATA(qp->b, r, 0);
+			MATRIX_DATA(qp->b_eq, r, 0);
 	}
 	VERBOSE_PRINT_MATRIX(qb_vec);
 
 	/* construct the KKT matrix */
-	int kkt_row = qp->P->row + qp->A->row;
-	int kkt_column = qp->P->column + qp->A->row;
+	int kkt_row = qp->P->row + qp->A_eq->row;
+	int kkt_column = qp->P->column + qp->A_eq->row;
 	FLOAT *KKT_data = (FLOAT *)calloc(kkt_row * kkt_column, sizeof(FLOAT));
 	matrix_t KKT = {
 		.data = KKT_data,
@@ -122,29 +128,29 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 		}
 	}
 	//copy A.'
-	for(r = 0; r < qp->A->column; r++) {
-		for(c = 0; c < qp->A->row; c++) {
-			MATRIX_DATA(&KKT, r, (c + qp->A->column)) =
-				MATRIX_DATA(qp->A, c, r);
+	for(r = 0; r < qp->A_eq->column; r++) {
+		for(c = 0; c < qp->A_eq->row; c++) {
+			MATRIX_DATA(&KKT, r, (c + qp->A_eq->column)) =
+				MATRIX_DATA(qp->A_eq, c, r);
 		}
 	}
 	//copy A
-	for(r = 0; r < qp->A->row; r++) {
-		for(c = 0; c < qp->A->column; c++) {
+	for(r = 0; r < qp->A_eq->row; r++) {
+		for(c = 0; c < qp->A_eq->column; c++) {
 			MATRIX_DATA(&KKT, (r + qp->P->row), c) =
-				MATRIX_DATA(qp->A, r, c);
+				MATRIX_DATA(qp->A_eq, r, c);
 		}
 	}
 	//set zero matrix
-	for(r = 0; r < qp->A->row; r++) {
-		for(c = 0; c < qp->A->row; c++) {
-			MATRIX_DATA(&KKT, (r + qp->P->row), (c + qp->A->column)) = 0;
+	for(r = 0; r < qp->A_eq->row; r++) {
+		for(c = 0; c < qp->A_eq->row; c++) {
+			MATRIX_DATA(&KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
 		}
 	}
 	VERBOSE_PRINT_MATRIX(KKT);
 
 	/* construct kkt solution vector */
-	int kkt_sol_row = qp->x->row + qp->b->row;
+	int kkt_sol_row = qp->x->row + qp->b_eq->row;
 	int kkt_sol_column = 1;
 	FLOAT *kkt_sol_data = (FLOAT *)malloc(sizeof(FLOAT) * kkt_sol_row * kkt_sol_column);
 	vector_t kkt_sol = {
@@ -172,31 +178,33 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
-	/* log barrier's parameter */
+	//log barrier's parameter
 	float t = 100.0f;
 
-	/* save previous optimization result */
+	//save previous optimization result
 	MALLOC_MATRIX(x_last, qp->x->row, qp->x->column);
 	vector_copy(&x_last, qp->x);
-	//inverted second derivative of the objective function */
+	//inverted second derivative of the objective function
 	MALLOC_MATRIX(D2_f0, qp->P->row, qp->P->column);
-	//inverted second derivative of the objective function */
+	//inverted second derivative of the objective function
 	MALLOC_MATRIX(D2_f0_inv, qp->P->row, qp->P->column);
-	//first derivative of the objective function */
+	//first derivative of the objective function
 	MALLOC_MATRIX(D1_f0, qp->x->row, qp->x->column);
-	//first derivative of the sumation of the log barrier functions  */
+	//first derivative of the sumation of the log barrier functions
 	CALLOC_MATRIX(D1_phi, qp->x->row, qp->x->column);
-	//transposed first derivative of the i-th inequality constraint function */
-	CALLOC_MATRIX(D1_fi_t, qp->x->row, qp->x->column);
-	//D[f_i(x)] * D[f_i(x)].' */
+	//transposed first derivative of the i-th inequality constraint function
+	CALLOC_MATRIX(D1_fi, qp->x->row, qp->x->column);
+	CALLOC_MATRIX(D1_fi_t, qp->x->column, qp->x->row);
+	//D[f_i(x)] * D[f_i(x)].'
 	MALLOC_MATRIX(D1_fi_D1_fi_t, qp->x->row, qp->x->row);
-	//second derivative of the summation of the log barrier functions */
+	//second derivative of the summation of the log barrier functions
 	CALLOC_MATRIX(D2_phi, qp->x->row, qp->x->row);
-	//newton step's vector */
+	//newton step's vector
 	MALLOC_VECTOR(newton_step, qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	float f_i = 0;
+	float div_f_i = 0;
 	float f_i_squred = 0;
 	float div_f_i_squared = 0;
 
@@ -226,9 +234,50 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			MATRIX_DATA(&D1_phi, r, 0) += -f_i;
 		}		
 
-		/* affine inequality */
-		//TODO
+#if (ENABLE_AFFINE_INEQUALITY == 1)
+		/*==============================================================*
+		 * calculate first and second derivative of affine inequalities *
+		 *==============================================================*/
+		for(r = 0; r < qp->A->row; r++) {
+			int i, j;
 
+			/* calculate constraint function value */
+			f_i = 0;
+			for(j = 0; j < qp->A->column; j++) {
+				f_i += MATRIX_DATA(qp->A, r, j) * MATRIX_DATA(qp->x, j, 0);
+			}
+			f_i -= MATRIX_DATA(qp->b, r, 0);
+			div_f_i = -(1 / f_i);
+
+			/* calculate first derivative */
+			for(i = 0; i < qp->A->row; i++) {
+				for(j = 0; j < qp->A->column; j++) {
+						MATRIX_DATA(&D1_fi, i, 0) =
+							div_f_i * MATRIX_DATA(qp->A, r, j);
+						MATRIX_DATA(&D1_fi_t, 0, i) =
+							MATRIX_DATA(&D1_fi, i, 0);
+				}
+			}
+			for(i = 0; i < D1_phi.row; i++) {
+				for(j = 0; j < D1_phi.column; j++) {
+					MATRIX_DATA(&D1_phi, i, j) +=
+						MATRIX_DATA(&D1_fi, i, j);
+				}
+			}
+
+			/* calculate second derivative */
+			matrix_multiply(&D1_fi, &D1_fi_t, &D1_fi_D1_fi_t);
+			div_f_i_squared = 1 / (f_i * f_i);
+			matrix_scaling(div_f_i_squared, &D1_fi_D1_fi_t);
+
+			for(i = 0; i < D2_phi.row; i++) {
+				for(j = 0; j < D2_phi.column; j++) {
+					MATRIX_DATA(&D2_phi, i, j) +=
+						div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, i, j);
+				}
+			}
+		}
+#endif
 		VERBOSE_PRINT_MATRIX(D1_phi);
 
 		/*===============================================================*
@@ -266,9 +315,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
 			}
 		}
-
-		/* affine inequality */
-		//TODO
 
 		VERBOSE_PRINT_MATRIX(D2_phi);
 
@@ -350,26 +396,26 @@ int qp_solve_start(qp_t *qp)
 {
 	if(qp->x == NULL) return QP_ERROR_NO_OPTIMIZATION_VARIABLE;
 	if(qp->P == NULL) return QP_ERROR_NO_OBJECTIVE_FUNCTION;
-	if(qp->A == NULL && qp->b != NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
-	if(qp->A != NULL && qp->b == NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
+	if(qp->A_eq == NULL && qp->b_eq != NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
+	if(qp->A_eq != NULL && qp->b_eq == NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
 
 	/* no constraint optimization */
-	if((qp->A == NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
+	if((qp->A_eq == NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
 		qp_solve_no_constraint_problem(qp);
 	}
 
 	/* equality constrained optmization */
-	if((qp->A != NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
+	if((qp->A_eq != NULL) && (qp->lb == NULL) && (qp->ub == NULL)) {
 		qp_solve_equality_constraint_problem(qp);
 	}
 
 	/* inequality constrained optimization */
-	if((qp->A == NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
+	if((qp->A_eq == NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
 		qp_solve_inequality_constraint_problem(qp);
 	} 
 
 	/* equality-inequality constrained optimization */
-	if((qp->A != NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
+	if((qp->A_eq != NULL) && ((qp->lb != NULL) || (qp->ub != NULL))) {
 		qp_solve_all_constraints_problem(qp);
 	}
 

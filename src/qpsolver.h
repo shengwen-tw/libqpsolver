@@ -33,12 +33,14 @@ typedef struct {
 	vector_t *r;
 
 	/* equality constraint */
-	matrix_t *A;
-	vector_t *b;
+	matrix_t *A_eq;
+	vector_t *b_eq;
 
 	/* inequality constraints */
-	vector_t *lb;
-	vector_t *ub;
+	vector_t *lb; //lower bound inequality
+	vector_t *ub; //upper bound inequality
+	matrix_t *A;  //affine inequality matrix
+	vector_t *b;  //affine inequality vector
 
 	/* stop criterions */
 	FLOAT eps;
@@ -52,6 +54,7 @@ void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r)
 void qp_solve_set_equality_constraints(qp_t *qp, matrix_t *A, vector_t *b);
 void qp_solve_set_upper_bound_inequality_constraints(qp_t *qp, vector_t *ub);
 void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb);
+void qp_solve_set_affine_inequality_constraints(qp_t *qp, matrix_t *A, vector_t *b);
 int qp_solve_start(qp_t *qp);
 
 #endif
