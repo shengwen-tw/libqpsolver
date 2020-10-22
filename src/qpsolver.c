@@ -302,7 +302,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			/* calculate second derivative */
 			matrix_multiply(&D1_fi, &D1_fi_t, &D1_fi_D1_fi_t);
 			div_f_i_squared = 1 / (f_i * f_i);
-			matrix_scaling(div_f_i_squared, &D1_fi_D1_fi_t);
 
 			for(i = 0; i < D2_phi.row; i++) {
 				for(j = 0; j < D2_phi.column; j++) {
