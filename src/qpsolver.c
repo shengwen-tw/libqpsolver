@@ -179,7 +179,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
 	//log barrier's parameter
-	float t = 100.0f;
+	float t = 1000.0f;
 
 	//save previous optimization result
 	MALLOC_MATRIX(x_last, qp->x->row, qp->x->column);
@@ -216,23 +216,57 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		/* preseve last x for checking convergence */
 		vector_copy(&x_last, qp->x);	
 
-		/*==============================================================*
-		 * 1.calculate the first derivative of the log barrier function *
-		 *==============================================================*/
+#if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
+		/*===================================================================*
+		 * calculate first and second derivative of lower bound inequalities *
+		 *===================================================================*/
 
-		/* lower bound */
+		//first derivative
+		f_i_squred = 0;
 		for(r = 0; r < qp->lb->row; r++) {
 			f_i = -(-MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0));
+			f_i_squred += f_i * f_i;
 
 			MATRIX_DATA(&D1_phi, r, 0) += f_i;
 		}
 
-		/* upper bound */
+		//second derivative
+		matrix_transpose(qp->lb, &D1_fi_t);
+		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
+		div_f_i_squared = 1 / f_i_squred;
+		for(r = 0; r < D2_phi.row; r++) {
+			for(c = 0; c < D2_phi.column; c++) {
+				MATRIX_DATA(&D2_phi, r, c) += 
+					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
+			}
+		}
+#endif
+
+#if (ENABLE_UPPER_BOUND_INEQUALITY == 1)
+		/*===================================================================*
+		 * calculate first and second derivative of upper bound inequalities *
+		 *===================================================================*/
+
+		//first derivative
+		f_i_squred = 0;
 		for(r = 0; r < qp->ub->row; r++) {
 			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
+			f_i_squred += f_i * f_i;
 
 			MATRIX_DATA(&D1_phi, r, 0) += -f_i;
-		}		
+		}
+
+		//second derivative
+		matrix_transpose(qp->ub, &D1_fi_t);
+		matrix_multiply(qp->ub, &D1_fi_t, &D1_fi_D1_fi_t);
+		div_f_i_squared = 1 / f_i_squred;
+		for(r = 0; r < D2_phi.row; r++) {
+			for(c = 0; c < D2_phi.column; c++) {
+				MATRIX_DATA(&D2_phi, r, c) += 
+					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
+			}
+		}
+#endif
 
 #if (ENABLE_AFFINE_INEQUALITY == 1)
 		/*==============================================================*
@@ -279,43 +313,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		}
 #endif
 		VERBOSE_PRINT_MATRIX(D1_phi);
-
-		/*===============================================================*
-		 * 2.calculate the second derivative of the log barrier function *
-		 *===============================================================*/
-
-		/* lower bound */
-		matrix_transpose(qp->lb, &D1_fi_t);
-		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
-		f_i_squred = 0;
-		for(r = 0; r < qp->lb->row; r++) {
-			f_i = MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0);
-			f_i_squred += f_i * f_i;
-		}
-		div_f_i_squared = 1 / f_i_squred;
-		for(r = 0; r < D2_phi.row; r++) {
-			for(c = 0; c < D2_phi.column; c++) {
-				MATRIX_DATA(&D2_phi, r, c) += 
-					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
-			}
-		}
-
-		/* upper bound */
-		matrix_transpose(qp->ub, &D1_fi_t);
-		matrix_multiply(qp->ub, &D1_fi_t, &D1_fi_D1_fi_t);
-		f_i_squred = 0;
-		for(r = 0; r < qp->ub->row; r++) {
-			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
-			f_i_squred += f_i * f_i;
-		}
-		div_f_i_squared = 1 / f_i_squred;
-		for(r = 0; r < D2_phi.row; r++) {
-			for(c = 0; c < D2_phi.column; c++) {
-				MATRIX_DATA(&D2_phi, r, c) += 
-					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
-			}
-		}
-
 		VERBOSE_PRINT_MATRIX(D2_phi);
 
 		/*============================================================*
