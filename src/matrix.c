@@ -14,6 +14,33 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	free(pivots);
 }
 
+matrix_t* matrix_new(int r, int c)
+{
+	matrix_t *mat = (matrix_t *)malloc(sizeof(matrix_t));
+
+	mat->row = r;
+	mat->column = c;
+	mat->data = (FLOAT *)malloc(sizeof(FLOAT) * r * c);
+
+	return mat;
+}
+
+matrix_t* matrix_zeros(int r, int c)
+{
+	matrix_t *mat = (matrix_t *)malloc(sizeof(matrix_t));
+
+	mat->row = r;
+	mat->column = c;
+	mat->data = (FLOAT *)calloc(r * c, sizeof(FLOAT));
+
+	return mat;
+}
+
+void matrix_delete(matrix_t *mat)
+{
+	if(mat->data != NULL) free(mat->data);
+}
+
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 {
 	memcpy(mat_inv->data, mat->data, sizeof(FLOAT) * mat_inv->row * mat_inv->column);

@@ -60,6 +60,9 @@ typedef matrix_t vector_t;
 
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
 
+matrix_t* matrix_new(int r, int c);
+matrix_t* matrix_zeros(int r, int c);
+void matrix_delete(matrix_t *mat);
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv);
 void matrix_copy(matrix_t *dest, matrix_t *src);
 void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
