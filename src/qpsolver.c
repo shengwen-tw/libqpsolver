@@ -181,8 +181,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	//log barrier's parameter
 	float t = 2000.0f;
 
-	float step_size = 0.001;
-
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
 	vector_copy(x_last, qp->x);
@@ -198,7 +196,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
 	//transposed first derivative of the i-th inequality constraint function
 	matrix_t *D1_fi_t = matrix_zeros(qp->x->column, qp->x->row);
-	//D[f_i(x)] * D[f_i(x)].'
+	//D[fi(x)] * D[fi(x)].'
 	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
 
 	//first derivative of the sumation of log barrier functions
@@ -210,10 +208,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	vector_t *newton_step = vector_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	float f_i = 0;
-	float div_f_i = 0;
-	float f_i_squred = 0;
-	float div_f_i_squared = 0;
+	float fi = 0;
+	float div_fi = 0;
+	float div_fi_squared = 0;
 
 	int r, c;
 
@@ -235,10 +232,11 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 		//first derivative
 		for(r = 0; r < qp->lb->row; r++) {
-			f_i = -matrix_at(qp->x, r, 0) + matrix_at(qp->lb, r, 0);
-			div_f_i_squared = 1 / (f_i * f_i);
+			fi = -matrix_at(qp->x, r, 0) + matrix_at(qp->lb, r, 0);
+			div_fi = 1 / fi;
+			div_fi_squared = 1 / (fi * fi);
 
-			matrix_at(D1_phi, r, 0) += -(1 / f_i);
+			matrix_at(D1_phi, r, 0) += div_fi;
 
 			int i, j;
 			for(i = 0; i < D1_fi->row; i++) {
@@ -254,7 +252,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
 					matrix_at(D2_phi, i, j) += 
-						(div_f_i_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+						(div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
 				}
 			}
 		}
@@ -268,10 +266,11 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 		//first derivative
 		for(r = 0; r < qp->ub->row; r++) {
-			f_i = matrix_at(qp->x, r, 0) -  matrix_at(qp->ub, r, 0);
-			div_f_i_squared = 1 / (f_i * f_i);
+			fi = matrix_at(qp->x, r, 0) -  matrix_at(qp->ub, r, 0);
+			div_fi = -1 / fi;
+			div_fi_squared = 1 / (fi * fi);
 
-			matrix_at(D1_phi, r, 0) += -(1 / f_i);
+			matrix_at(D1_phi, r, 0) += div_fi;
 
 			int i, j;
 			for(i = 0; i < D1_fi->row; i++) {
@@ -287,7 +286,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
 					matrix_at(D2_phi, i, j) += 
-						(div_f_i_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+						(div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
 				}
 			}
 		}
@@ -301,18 +300,18 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			int i, j;
 
 			/* calculate constraint function value */
-			f_i = 0;
+			fi = 0;
 			for(j = 0; j < qp->A->column; j++) {
-				f_i += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
+				fi += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
 			}
-			f_i -= matrix_at(qp->b, r, 0);
-			div_f_i = -(1 / f_i);
+			fi -= matrix_at(qp->b, r, 0);
+			div_fi = -(1 / fi);
 
 			/* calculate first derivative */
 			for(i = 0; i < qp->A->row; i++) {
 				for(j = 0; j < qp->A->column; j++) {
 						matrix_at(D1_fi, i, 0) =
-							div_f_i * matrix_at(qp->A, r, j);
+							div_fi * matrix_at(qp->A, r, j);
 						matrix_at(D1_fi_t, 0, i) =
 							matrix_at(D1_fi, i, 0);
 				}
@@ -326,12 +325,12 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 
 			/* calculate second derivative */
 			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-			div_f_i_squared = 1 / (f_i * f_i);
+			div_fi_squared = 1 / (fi * fi);
 
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
 					matrix_at(D2_phi, i, j) +=
-						div_f_i_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+						div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 				}
 			}
 		}
