@@ -24,8 +24,8 @@ int main(void)
 
 	//optimization variable
 	matrix_t x;
-	matrix_construct(&x, 2, 1, ELEMENTS(0,
-				            0));
+	matrix_construct(&x, 2, 1, ELEMENTS(1.1,
+				            1.1));
 
 	//objective function
 	matrix_t P, q;
@@ -43,11 +43,11 @@ int main(void)
 
 	//inequality constraints
 	vector_t lb, ub;
-	vector_construct(&lb, 2, 1, ELEMENTS(-2,
-                                             -2));
+	vector_construct(&lb, 2, 1, ELEMENTS(-1,
+                                             -1));
 
-	vector_construct(&ub, 2, 1, ELEMENTS(+2,
-                                             +2));
+	vector_construct(&ub, 2, 1, ELEMENTS(3.2,
+                                             3.3));
 
 	matrix_t A, b;
 	matrix_construct(&A, 3, 2, ELEMENTS(+1, +1,
