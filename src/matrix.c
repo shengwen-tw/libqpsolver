@@ -52,6 +52,16 @@ void matrix_delete(matrix_t *mat)
 	if(mat->data != NULL) free(mat->data);
 }
 
+void matrix_reset_zeros(matrix_t *mat)
+{
+	int r, c;
+	for(r = 0; r < mat->row; r++) {
+		for(c = 0; c < mat->column; c++) {
+			matrix_at(mat, r, c) = 0;
+		}
+	}
+}
+
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 {
 	memcpy(mat_inv->data, mat->data, sizeof(FLOAT) * mat_inv->row * mat_inv->column);
@@ -155,6 +165,16 @@ vector_t* vector_zeros(int r, int c)
 void vector_delete(vector_t *vec)
 {
 	if(vec->data != NULL) free(vec->data);
+}
+
+void vector_reset_zeros(matrix_t *vec)
+{
+	int r, c;
+	for(r = 0; r < vec->row; r++) {
+		for(c = 0; c < vec->column; c++) {
+			vector_at(vec, r, c) = 0;
+		}
+	}
 }
 
 void vector_scaling(float scaler, vector_t *vec)

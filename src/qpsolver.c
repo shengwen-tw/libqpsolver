@@ -186,22 +186,26 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
 	vector_copy(x_last, qp->x);
+
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the objective function
 	matrix_t *D2_f0 = matrix_new(qp->P->row, qp->P->column);
 	//inverted second derivative of the objective function
 	matrix_t *D2_f0_inv = matrix_new(qp->x->row, qp->x->row);
-	//first derivative of the sumation of log barrier functions
-	matrix_t *D1_phi = matrix_zeros(qp->x->row, qp->x->column);
+
 	//first derivative of the i-th inequality constraint function
 	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
 	//transposed first derivative of the i-th inequality constraint function
 	matrix_t *D1_fi_t = matrix_zeros(qp->x->column, qp->x->row);
 	//D[f_i(x)] * D[f_i(x)].'
 	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
+
+	//first derivative of the sumation of log barrier functions
+	matrix_t *D1_phi = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the summation of the log barrier functions
-	matrix_t *D2_phi = matrix_zeros(qp->x->row, qp->x->row);
+	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
+
 	//newton step's vector
 	vector_t *newton_step = vector_new(qp->x->row, qp->x->column);
 
@@ -214,36 +218,15 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	int r, c;
 
 	while(qp->iters < qp->max_iters) {
-		t *= 1.001;
-
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
-
-		for(r = 0; r < D1_f0->row; r++) {
-			for(c = 0; c < D1_f0->column; c++) {
-				matrix_at(D1_f0, r, c) = 0;
-			}
-		}
-
-		for(r = 0; r < D2_f0->row; r++) {
-			for(c = 0; c < D2_f0->column; c++) {
-				matrix_at(D2_f0, r, c) = 0;
-			}
-		}
-
-		for(r = 0; r < D1_phi->row; r++) {
-			for(c = 0; c < D1_fi->column; c++) {
-				matrix_at(D1_phi, r, c) = 0;
-			}
-		}
-
-		for(r = 0; r < D2_phi->row; r++) {
-			for(c = 0; c < D2_phi->column; c++) {
-				matrix_at(D2_phi, r, c) = 0;
-			}
-		}
 
 		/* preseve last x for checking convergence */
 		vector_copy(x_last, qp->x);	
+
+		t *= 1.001;
+
+		matrix_reset_zeros(D1_phi);
+		matrix_reset_zeros(D2_phi);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
