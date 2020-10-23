@@ -4,51 +4,13 @@
 #include <stdio.h>
 #include "libqpsolver.h"
 
-/* matrix initialization */
-#define MATRIX_ARGS(...) __VA_ARGS__
-#define DECLARE_MATRIX(name, _row, _column, ...) \
-	FLOAT name##_data[_row * _column] = {MATRIX_ARGS __VA_ARGS__}; \
-	matrix_t name = { \
-		.data = name##_data, \
-		.row = _row, \
-		.column = _column \
-	}
+#define ELEMENTS(...) (FLOAT []){__VA_ARGS__}
 
-/* malloc new matrix */
-#define MALLOC_MATRIX(name, _row, _column) \
-	FLOAT *name##_data = (FLOAT *)malloc(sizeof(FLOAT) * _row * _column); \
-	matrix_t name = { \
-		.data = name##_data, \
-		.row = _row, \
-		.column = _column \
-	};
+#define matrix_at(mat_ptr, r, c) (mat_ptr)->data[(r * (mat_ptr)->column) + c]
+#define vector_at(vec_ptr, r, c) (vec_ptr)->data[(r * (vec_ptr)->column) + c]
 
-/* calloc new matrix */
-#define CALLOC_MATRIX(name, _row, _column) \
-	FLOAT *name##_data = (FLOAT *)calloc(_row * _column, sizeof(FLOAT)); \
-	matrix_t name = { \
-		.data = name##_data, \
-		.row = _row, \
-		.column = _column \
-	};
-
-#define DELETE_MATRIX(name) \
-	free(name.data)
-
-/* access matrix element with row and column index */
-#define MATRIX_DATA(mat_ptr, r, c) \
-	(mat_ptr)->data[(r * (mat_ptr)->column) + c]
-
-/* matrix debug print wrapper*/
-#define PRINT_MATRIX(mat) \
-	print_matrix(#mat, &mat)
-
-#define DECLARE_VECTOR DECLARE_MATRIX
-#define MALLOC_VECTOR MALLOC_MATRIX
-#define CALLOC_VECTOR CALLOC_MATRIX
-#define DELETE_VECTOR DELETE_MATRIX
-#define VECTOR_DATA MATRIX_DATA
-#define PRINT_VECTOR PRINT_MATRIX
+#define PRINT_MATRIX(mat) print_matrix(#mat, &mat)
+#define PRINT_VECTOR(vec) print_matrix(#vec, &vec)
 
 typedef struct {
 	FLOAT *data;
@@ -60,6 +22,7 @@ typedef matrix_t vector_t;
 
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
 
+void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data);
 matrix_t* matrix_new(int r, int c);
 matrix_t* matrix_zeros(int r, int c);
 void matrix_delete(matrix_t *mat);
@@ -70,6 +33,10 @@ void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 void matrix_scaling(float scaler, matrix_t *mat);
 void matrix_transpose(matrix_t *mat, matrix_t *trans_mat);
 
+void vector_construct(vector_t *vec, int r, int c, FLOAT *data);
+vector_t* vector_new(int r, int c);
+vector_t* vector_zeros(int r, int c);
+void vector_delete(vector_t *vec);
 void vector_scaling(float scaler, vector_t *vec);
 void vector_copy(vector_t *dest, vector_t *src);
 void vector_negate(vector_t *vec);

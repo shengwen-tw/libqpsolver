@@ -19,52 +19,49 @@ double time(void)
 int main(void)
 {
 	/* quadratic programming */
-	DECLARE_QP_PROBLEM(qp);
+	qp_t qp;
+	qp_init(&qp);
 
 	//optimization variable
-	DECLARE_VECTOR(x, 2, 1,
-                       (0,
-                        0));
-	PRINT_MATRIX(x);
+	matrix_t x;
+	matrix_construct(&x, 2, 1, ELEMENTS(0,
+				            0));
 
 	//objective function
-	DECLARE_MATRIX(P, 2, 2,
-                       (+1, -1,
-                        -1, +2));
-	DECLARE_VECTOR(q, 2, 1,
-                       (-2,
-                        -6));
-	PRINT_MATRIX(P);
-	PRINT_MATRIX(q);
+	matrix_t P, q;
+	matrix_construct(&P, 2, 2, ELEMENTS(+1, -1,
+                                            -1, +2));
+	matrix_construct(&q, 2, 1, ELEMENTS(-2,
+                                            -6));
 
 	//equaility constraint
-	DECLARE_MATRIX(A_eq, 1, 2,
-                       (1, 1));
-	DECLARE_MATRIX(b_eq, 2, 1,
-                       (0,
-                        0));
-	PRINT_MATRIX(A_eq);
-	PRINT_MATRIX(b_eq);
+	matrix_t A_eq, b_eq;
+	matrix_construct(&A_eq, 1, 2, ELEMENTS(1, 2,
+                                               1, 1));
+	matrix_construct(&b_eq, 2, 1, ELEMENTS(0,
+                                               0));
 
 	//inequality constraints
-	DECLARE_MATRIX(lb, 2, 1,
-                       (-2,
-                        -2));
-	DECLARE_MATRIX(ub, 2, 1,
-                       (+2,
-                        +2));
+	vector_t lb, ub;
+	vector_construct(&lb, 2, 1, ELEMENTS(-2,
+                                             -2));
 
-	DECLARE_MATRIX(A, 3, 2,
-                       (+1, +1,
-                        -1, +2,
-                        +2, +1));
-	DECLARE_MATRIX(b, 3, 1,
-                       (2,
-                        2,
-                        3));
-	PRINT_MATRIX(A);
-	PRINT_MATRIX(b);
+	vector_construct(&ub, 2, 1, ELEMENTS(+2,
+                                             +2));
 
+	matrix_t A, b;
+	matrix_construct(&A, 3, 2, ELEMENTS(+1, +1,
+                                            -1, +2,
+                                            +2, +1));
+	matrix_construct(&b, 3, 1, ELEMENTS(2,
+                                            2,
+                                            3));
+
+	PRINT_MATRIX(x);
+	PRINT_MATRIX(P);
+	PRINT_MATRIX(q);
+	PRINT_MATRIX(A_eq);
+	PRINT_MATRIX(b_eq);
 	PRINT_MATRIX(lb);
 	PRINT_MATRIX(ub);
 	PRINT_MATRIX(A);

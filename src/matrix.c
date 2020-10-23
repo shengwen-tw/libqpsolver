@@ -14,6 +14,17 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	free(pivots);
 }
 
+/*===================*
+ * matrix operations *
+ *===================*/
+
+void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data)
+{
+	mat->row = r;
+	mat->column = c;
+	mat->data = data;
+}
+
 matrix_t* matrix_new(int r, int c)
 {
 	matrix_t *mat = (matrix_t *)malloc(sizeof(matrix_t));
@@ -61,7 +72,7 @@ void matrix_copy(matrix_t *dest, matrix_t *src)
 	int r, c;
 	for(r = 0; r < dest->row; r++) {
 		for(c = 0; c < dest->column; c++) {
-			MATRIX_DATA(dest, r, c) = MATRIX_DATA(src, r, c);
+			matrix_at(dest, r, c) = matrix_at(src, r, c);
 		}
 	}
 }
@@ -71,8 +82,8 @@ void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 	int r, c;
 	for(r = 0; r < mat1->row; r++) {
 		for(c = 0; c < mat1->column; c++) {
-			MATRIX_DATA(mat_result, r, c) =
-				MATRIX_DATA(mat1, r, c) + MATRIX_DATA(mat2, r, c);
+			matrix_at(mat_result, r, c) =
+				matrix_at(mat1, r, c) + matrix_at(mat2, r, c);
 		}
 	}
 }
@@ -93,7 +104,7 @@ void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
 	int r, c;
 	for(r = 0; r < mat->row; r++) {
 		for(c = 0; c < mat->column; c++) {
-			MATRIX_DATA(trans_mat, c, r) = MATRIX_DATA(mat, r, c);
+			matrix_at(trans_mat, c, r) = matrix_at(mat, r, c);
 		}
 	}
 }
@@ -103,16 +114,54 @@ void matrix_scaling(float scaler, matrix_t *mat)
 	int r, c;
 	for(r = 0; r < mat->row; r++) {
 		for(c = 0; c < mat->column; c++) {
-			MATRIX_DATA(mat, r, c) *= scaler;
+			matrix_at(mat, r, c) *= scaler;
 		}
 	}
+}
+
+/*====================*
+ * vector opertations *
+ *====================*/
+
+void vector_construct(vector_t *vec, int r, int c, FLOAT *data)
+{
+	vec->row = r;
+	vec->column = c;
+	vec->data = data;
+}
+
+matrix_t* vector_new(int r, int c)
+{
+	matrix_t *vec = (vector_t *)malloc(sizeof(vector_t));
+
+	vec->row = r;
+	vec->column = c;
+	vec->data = (FLOAT *)malloc(sizeof(FLOAT) * r * c);
+
+	return vec;
+}
+
+vector_t* vector_zeros(int r, int c)
+{
+	vector_t *vec = (vector_t *)malloc(sizeof(vector_t));
+
+	vec->row = r;
+	vec->column = c;
+	vec->data = (FLOAT *)calloc(r * c, sizeof(FLOAT));
+
+	return vec;
+}
+
+void vector_delete(vector_t *vec)
+{
+	if(vec->data != NULL) free(vec->data);
 }
 
 void vector_scaling(float scaler, vector_t *vec)
 {
 	int r;
 	for(r = 0; r < vec->row; r++) {
-		MATRIX_DATA(vec, r, 0) *= scaler;
+		matrix_at(vec, r, 0) *= scaler;
 	}
 }
 
@@ -120,7 +169,7 @@ void vector_copy(vector_t *dest, vector_t *src)
 {
 	int r;
 	for(r = 0; r < dest->row; r++) {
-		MATRIX_DATA(dest, r, 0) = MATRIX_DATA(src, r, 0);
+		matrix_at(dest, r, 0) = matrix_at(src, r, 0);
 	}
 }
 
@@ -128,7 +177,7 @@ void vector_negate(vector_t *vec)
 {
 	int r;
 	for(r = 0; r < vec->row; r++) {
-		MATRIX_DATA(vec, r, 0) *= -1;
+		matrix_at(vec, r, 0) *= -1;
 	}
 }
 
@@ -139,7 +188,7 @@ float vector_residual(vector_t *vec1, vector_t *vec2)
 
 	int r;
 	for(r = 0; r < vec1->row; r++) {
-		diff = MATRIX_DATA(vec1, r, 0) - MATRIX_DATA(vec2, r, 0);
+		diff = matrix_at(vec1, r, 0) - matrix_at(vec2, r, 0);
 		sum_of_squared += diff * diff;
 	}
 

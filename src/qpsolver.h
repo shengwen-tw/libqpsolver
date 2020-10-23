@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include "matrix.h"
 
-#define DECLARE_QP_PROBLEM(name) \
-	qp_t name; \
-	qp_init(&name);
-
 #if VERBOSE == 0
 #define VERBOSE_PRINT(...)
 #define VERBOSE_PRINT_MATRIX(...)

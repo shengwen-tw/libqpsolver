@@ -101,13 +101,13 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	//copy -q
 	for(r = 0; r < qp->q->row; r++) {
 		//copy -q
-		MATRIX_DATA(&qb_vec, r, 0) = -MATRIX_DATA(qp->q, r, 0);
+		matrix_at(&qb_vec, r, 0) = -matrix_at(qp->q, r, 0);
 	}
 	//copy b
 	for(r = 0; r < qp->b_eq->row; r++) {
 		//copy b
-		MATRIX_DATA(&qb_vec, r + qp->q->row, 0) =
-			MATRIX_DATA(qp->b_eq, r, 0);
+		matrix_at(&qb_vec, r + qp->q->row, 0) =
+			matrix_at(qp->b_eq, r, 0);
 	}
 	VERBOSE_PRINT_MATRIX(qb_vec);
 
@@ -124,27 +124,27 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	//copy P
 	for(r = 0; r < qp->P->row; r++) {
 		for(c = 0; c < qp->P->column; c++) {
-			MATRIX_DATA(&KKT, r, c) = MATRIX_DATA(qp->P, r, c);
+			matrix_at(&KKT, r, c) = matrix_at(qp->P, r, c);
 		}
 	}
 	//copy A.'
 	for(r = 0; r < qp->A_eq->column; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
-			MATRIX_DATA(&KKT, r, (c + qp->A_eq->column)) =
-				MATRIX_DATA(qp->A_eq, c, r);
+			matrix_at(&KKT, r, (c + qp->A_eq->column)) =
+				matrix_at(qp->A_eq, c, r);
 		}
 	}
 	//copy A
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->column; c++) {
-			MATRIX_DATA(&KKT, (r + qp->P->row), c) =
-				MATRIX_DATA(qp->A_eq, r, c);
+			matrix_at(&KKT, (r + qp->P->row), c) =
+				matrix_at(qp->A_eq, r, c);
 		}
 	}
 	//set zero matrix
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
-			MATRIX_DATA(&KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
+			matrix_at(&KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
 		}
 	}
 	VERBOSE_PRINT_MATRIX(KKT);
@@ -165,7 +165,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 
 	/* copy the optimal solution back to x */
 	for(r = 0; r < qp->x->row; r++) {
-		MATRIX_DATA(qp->x, r, 0) = MATRIX_DATA(&kkt_sol, r, 0);
+		matrix_at(qp->x, r, 0) = matrix_at(&kkt_sol, r, 0);
 	}
 
 	/* free mallocs */
@@ -182,25 +182,25 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	float t = 1000.0f;
 
 	//save previous optimization result
-	MALLOC_MATRIX(x_last, qp->x->row, qp->x->column);
-	vector_copy(&x_last, qp->x);
+	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
+	vector_copy(x_last, qp->x);
 	//inverted second derivative of the objective function
-	MALLOC_MATRIX(D2_f0, qp->P->row, qp->P->column);
+	matrix_t *D2_f0 = matrix_new(qp->P->row, qp->P->column);
 	//inverted second derivative of the objective function
-	MALLOC_MATRIX(D2_f0_inv, qp->P->row, qp->P->column);
+	matrix_t *D2_f0_inv = matrix_new(qp->P->row, qp->P->column);
 	//first derivative of the objective function
-	MALLOC_MATRIX(D1_f0, qp->x->row, qp->x->column);
+	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
 	//first derivative of the sumation of the log barrier functions
-	CALLOC_MATRIX(D1_phi, qp->x->row, qp->x->column);
+	matrix_t *D1_phi = matrix_zeros(qp->x->row, qp->x->column);
 	//transposed first derivative of the i-th inequality constraint function
-	CALLOC_MATRIX(D1_fi, qp->x->row, qp->x->column);
-	CALLOC_MATRIX(D1_fi_t, qp->x->column, qp->x->row);
+	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
+	matrix_t *D1_fi_t = matrix_zeros(qp->x->column, qp->x->row);
 	//D[f_i(x)] * D[f_i(x)].'
-	MALLOC_MATRIX(D1_fi_D1_fi_t, qp->x->row, qp->x->row);
+	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
 	//second derivative of the summation of the log barrier functions
-	CALLOC_MATRIX(D2_phi, qp->x->row, qp->x->row);
+	matrix_t *D2_phi = matrix_zeros(qp->x->row, qp->x->row);
 	//newton step's vector
-	MALLOC_VECTOR(newton_step, qp->x->row, qp->x->column);
+	vector_t *newton_step = vector_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	float f_i = 0;
@@ -214,7 +214,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
 		/* preseve last x for checking convergence */
-		vector_copy(&x_last, qp->x);	
+		vector_copy(x_last, qp->x);	
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
@@ -224,20 +224,20 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		//first derivative
 		f_i_squred = 0;
 		for(r = 0; r < qp->lb->row; r++) {
-			f_i = -(-MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->lb, r, 0));
+			f_i = -(-matrix_at(qp->x, r, 0) - matrix_at(qp->lb, r, 0));
 			f_i_squred += f_i * f_i;
 
-			MATRIX_DATA(&D1_phi, r, 0) += f_i;
+			matrix_at(D1_phi, r, 0) += f_i;
 		}
 
 		//second derivative
-		matrix_transpose(qp->lb, &D1_fi_t);
-		matrix_multiply(qp->lb, &D1_fi_t, &D1_fi_D1_fi_t);
+		matrix_transpose(qp->lb, D1_fi_t);
+		matrix_multiply(qp->lb, D1_fi_t, D1_fi_D1_fi_t);
 		div_f_i_squared = 1 / f_i_squred;
-		for(r = 0; r < D2_phi.row; r++) {
-			for(c = 0; c < D2_phi.column; c++) {
-				MATRIX_DATA(&D2_phi, r, c) += 
-					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
+		for(r = 0; r < D2_phi->row; r++) {
+			for(c = 0; c < D2_phi->column; c++) {
+				matrix_at(D2_phi, r, c) += 
+					div_f_i_squared * matrix_at(D1_fi_D1_fi_t, r, c);
 			}
 		}
 #endif
@@ -250,20 +250,20 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		//first derivative
 		f_i_squred = 0;
 		for(r = 0; r < qp->ub->row; r++) {
-			f_i = -(MATRIX_DATA(qp->x, r, 0) - MATRIX_DATA(qp->ub, r, 0));
+			f_i = -(matrix_at(qp->x, r, 0) - matrix_at(qp->ub, r, 0));
 			f_i_squred += f_i * f_i;
 
-			MATRIX_DATA(&D1_phi, r, 0) += -f_i;
+			matrix_at(D1_phi, r, 0) += -f_i;
 		}
 
 		//second derivative
-		matrix_transpose(qp->ub, &D1_fi_t);
-		matrix_multiply(qp->ub, &D1_fi_t, &D1_fi_D1_fi_t);
+		matrix_transpose(qp->ub, D1_fi_t);
+		matrix_multiply(qp->ub, D1_fi_t, D1_fi_D1_fi_t);
 		div_f_i_squared = 1 / f_i_squred;
-		for(r = 0; r < D2_phi.row; r++) {
-			for(c = 0; c < D2_phi.column; c++) {
-				MATRIX_DATA(&D2_phi, r, c) += 
-					div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, r, c);
+		for(r = 0; r < D2_phi->row; r++) {
+			for(c = 0; c < D2_phi->column; c++) {
+				matrix_at(D2_phi, r, c) += 
+					div_f_i_squared * matrix_at(D1_fi_D1_fi_t, r, c);
 			}
 		}
 #endif
@@ -278,97 +278,97 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			/* calculate constraint function value */
 			f_i = 0;
 			for(j = 0; j < qp->A->column; j++) {
-				f_i += MATRIX_DATA(qp->A, r, j) * MATRIX_DATA(qp->x, j, 0);
+				f_i += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
 			}
-			f_i -= MATRIX_DATA(qp->b, r, 0);
+			f_i -= matrix_at(qp->b, r, 0);
 			div_f_i = -(1 / f_i);
 
 			/* calculate first derivative */
 			for(i = 0; i < qp->A->row; i++) {
 				for(j = 0; j < qp->A->column; j++) {
-						MATRIX_DATA(&D1_fi, i, 0) =
-							div_f_i * MATRIX_DATA(qp->A, r, j);
-						MATRIX_DATA(&D1_fi_t, 0, i) =
-							MATRIX_DATA(&D1_fi, i, 0);
+						matrix_at(D1_fi, i, 0) =
+							div_f_i * matrix_at(qp->A, r, j);
+						matrix_at(D1_fi_t, 0, i) =
+							matrix_at(D1_fi, i, 0);
 				}
 			}
-			for(i = 0; i < D1_phi.row; i++) {
-				for(j = 0; j < D1_phi.column; j++) {
-					MATRIX_DATA(&D1_phi, i, j) +=
-						MATRIX_DATA(&D1_fi, i, j);
+			for(i = 0; i < D1_phi->row; i++) {
+				for(j = 0; j < D1_phi->column; j++) {
+					matrix_at(D1_phi, i, j) +=
+						matrix_at(D1_fi, i, j);
 				}
 			}
 
 			/* calculate second derivative */
-			matrix_multiply(&D1_fi, &D1_fi_t, &D1_fi_D1_fi_t);
+			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
 			div_f_i_squared = 1 / (f_i * f_i);
 
-			for(i = 0; i < D2_phi.row; i++) {
-				for(j = 0; j < D2_phi.column; j++) {
-					MATRIX_DATA(&D2_phi, i, j) +=
-						div_f_i_squared * MATRIX_DATA(&D1_fi_D1_fi_t, i, j);
+			for(i = 0; i < D2_phi->row; i++) {
+				for(j = 0; j < D2_phi->column; j++) {
+					matrix_at(D2_phi, i, j) +=
+						div_f_i_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 				}
 			}
 		}
 #endif
-		VERBOSE_PRINT_MATRIX(D1_phi);
-		VERBOSE_PRINT_MATRIX(D2_phi);
+		VERBOSE_PRINT_MATRIX(*D1_phi);
+		VERBOSE_PRINT_MATRIX(*D2_phi);
 
 		/*============================================================*
 		 * 3. calculate the firt derivative of the objective function *
 		 *============================================================*/
-		matrix_multiply(qp->P, qp->x, &D1_f0);
+		matrix_multiply(qp->P, qp->x, D1_f0);
 		for(r = 0; r < qp->x->row; r++) {
-			MATRIX_DATA(&D1_f0, r, 0) += MATRIX_DATA(qp->q, r, 0);
+			matrix_at(D1_f0, r, 0) += matrix_at(qp->q, r, 0);
 		}
-		vector_scaling(t, &D1_f0);
+		vector_scaling(t, D1_f0);
 
 		/*============================================================*
 		 * 4. calculate the second derivate of the objective function *
 		 *============================================================*/
-		matrix_copy(&D2_f0, qp->P);
-		matrix_scaling(t, &D2_f0);
+		matrix_copy(D2_f0, qp->P);
+		matrix_scaling(t, D2_f0);
 
 		/*========================================================================*
 		 * 5. combine derivatives of objective function and log barrier functions *
 		 *========================================================================*/
 
 		/* first derivative */
-		for(r = 0; r < D1_f0.row; r++) {
-			for(c = 0; c < D1_f0.column; c++) {
-				MATRIX_DATA(&D1_f0, r, c) += MATRIX_DATA(&D1_phi, r, c);
+		for(r = 0; r < D1_f0->row; r++) {
+			for(c = 0; c < D1_f0->column; c++) {
+				matrix_at(D1_f0, r, c) += matrix_at(D1_phi, r, c);
 			}
 		}
 
 		/* second derivative */
-		for(r = 0; r < D2_f0.row; r++) {
-			for(c = 0; c < D2_f0.column; c++) {
-				MATRIX_DATA(&D2_f0, r, c) += MATRIX_DATA(&D2_phi, r, c);
+		for(r = 0; r < D2_f0->row; r++) {
+			for(c = 0; c < D2_f0->column; c++) {
+				matrix_at(D2_f0, r, c) += matrix_at(D2_phi, r, c);
 			}
 		}
 
 		/*================================*
 		 * 6. calculate the newton's step *
 		 *================================*/
-		matrix_inverse(&D2_f0, &D2_f0_inv);
-		matrix_multiply(&D2_f0_inv, &D1_f0, &newton_step);
-		vector_negate(&newton_step);
+		matrix_inverse(D2_f0, D2_f0_inv);
+		matrix_multiply(D2_f0_inv, D1_f0, newton_step);
+		vector_negate(newton_step);
 
-		VERBOSE_PRINT_MATRIX(D2_f0_inv);
-		VERBOSE_PRINT_MATRIX(D1_f0);
-		VERBOSE_PRINT_MATRIX(newton_step);
+		VERBOSE_PRINT_MATRIX(*D2_f0_inv);
+		VERBOSE_PRINT_MATRIX(*D1_f0);
+		VERBOSE_PRINT_MATRIX(*newton_step);
 
 		/*=====================================*
 		 * 7. update the optimization variable *
 		 *=====================================*/
 		for(r = 0; r < qp->x->row; r++) {
-			MATRIX_DATA(qp->x, r, 0) += MATRIX_DATA(&newton_step, r, 0);
+			matrix_at(qp->x, r, 0) += matrix_at(newton_step, r, 0);
 		}
 		VERBOSE_PRINT_MATRIX(*qp->x);
 
 		qp->iters++;
 
-		FLOAT resid =  vector_residual(qp->x, &x_last);
+		FLOAT resid =  vector_residual(qp->x, x_last);
 		VERBOSE_PRINT("residual: %f\n", resid);
 		VERBOSE_PRINT("---\n");
 
@@ -378,14 +378,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		}
 	}
 
-	DELETE_MATRIX(D2_f0);
-	DELETE_MATRIX(D2_f0_inv);
-	DELETE_MATRIX(D1_f0);
-	DELETE_MATRIX(D1_phi);
-	DELETE_MATRIX(D1_fi_t);
-	DELETE_MATRIX(D1_fi_D1_fi_t);
-	DELETE_MATRIX(D2_phi);
-	DELETE_VECTOR(newton_step);
+	matrix_delete(D2_f0);
+	matrix_delete(D2_f0_inv);
+	matrix_delete(D1_f0);
+	matrix_delete(D1_phi);
+	matrix_delete(D1_fi_t);
+	matrix_delete(D1_fi_D1_fi_t);
+	matrix_delete(D2_phi);
+	vector_delete(newton_step);
 }
 
 int qp_solve_start(qp_t *qp)
