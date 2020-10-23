@@ -179,7 +179,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
 	//log barrier's parameter
-	float t = 100.0f;
+	float t = 2000.0f;
 
 	float step_size = 0.001;
 
