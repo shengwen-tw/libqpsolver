@@ -4,7 +4,7 @@
 /*======================================*
  * enable internal debug message output *
  *======================================*/
-#define VERBOSE 1
+#define VERBOSE 0
 
 /*====================================*
  * floating-point data type precision *
