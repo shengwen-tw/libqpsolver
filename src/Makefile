@@ -32,8 +32,11 @@ $(EXECUTABLE): $(OBJS)
 	@echo "CC" $@
 	@$(CC) $(CFLAGS) -MMD -MP -c $< $(LDFLAGS) -o $@
 
+astyle:
+	astyle --style=linux --indent=tab=4 --recursive "*.c,*.h"
+
 clean:
 	rm -rf $(EXECUTABLE)
 	rm -rf $(OBJS)
 
-.PHONY: all clean
+.PHONY: all clean astyle
