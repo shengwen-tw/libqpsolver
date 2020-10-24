@@ -193,7 +193,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the objective function
 	matrix_t *D2_f0 = matrix_new(qp->P->row, qp->P->column);
-	matrix_copy(D2_f0, qp->P);
 	//inverted second derivative of the objective function
 	matrix_t *D2_f0_inv = matrix_new(qp->x->row, qp->x->row);
 
@@ -354,6 +353,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		/*=========================================================*
 		 * calculate the second derivate of the objective function *
 		 *=========================================================*/
+		matrix_copy(D2_f0, qp->P);
 		matrix_scaling(t, D2_f0);
 
 		/*=====================================================================*
