@@ -308,9 +308,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 
 lower_bound_derivatives:
 
-        if(lower_bound == false) {
-            goto upper_bound_derivatives;
-        }
+		if(lower_bound == false) {
+			goto upper_bound_derivatives;
+		}
 
 		//first derivative
 		for(r = 0; r < qp->lb->row; r++) {
@@ -348,9 +348,9 @@ lower_bound_derivatives:
 
 upper_bound_derivatives:
 
-        if(upper_bound == false) {
-            goto affine_bound_derivatives;
-        }
+		if(upper_bound == false) {
+			goto affine_bound_derivatives;
+		}
 
 		//first derivative
 		for(r = 0; r < qp->ub->row; r++) {
@@ -385,9 +385,9 @@ upper_bound_derivatives:
 		 *==============================================================*/
 affine_bound_derivatives:
 
-        if(affine_bound == false) {
-            goto objective_function_derivatives;
-        }
+		if(affine_bound == false) {
+			goto objective_function_derivatives;
+		}
 
 		for(r = 0; r < qp->A->row; r++) {
 			/* calculate constraint function value */
@@ -476,24 +476,24 @@ objective_function_derivatives:
 				/*==================================================*
 				 * check if lower bound constraints are still valid *
 				 *==================================================*/
-                if(lower_bound == true) {
-    				if(matrix_at(qp->x, r, 0) < matrix_at(qp->lb, r, 0)) {
-    					step_too_large = true;
-    					break;
-    				}
-                }
+				if(lower_bound == true) {
+					if(matrix_at(qp->x, r, 0) < matrix_at(qp->lb, r, 0)) {
+						step_too_large = true;
+						break;
+					}
+				}
 #endif
 
 #if (ENABLE_UPPER_BOUND_INEQUALITY == 1)
 				/*==================================================*
 				 * check if upper bound constraints are still valid *
 				 *==================================================*/
-                if(upper_bound == true) {
-    				if(matrix_at(qp->x, r, 0) > matrix_at(qp->ub, r, 0)) {
-    					step_too_large = true;
-    					break;
-    				}
-                }
+				if(upper_bound == true) {
+					if(matrix_at(qp->x, r, 0) > matrix_at(qp->ub, r, 0)) {
+						step_too_large = true;
+						break;
+					}
+				}
 #endif
 			}
 
@@ -501,19 +501,19 @@ objective_function_derivatives:
 			/*========================================================*
 			 * check if affine inequality constraints are still valid *
 			 *========================================================*/
-            if(affine_bound == true) {
-    			for(i = 0; i < qp->A->row; i++) {
-    				fi = 0;
-    				for(j = 0; j < qp->A->column; j++) {
-    					fi += matrix_at(qp->A, i, j) * matrix_at(qp->x, j, 0);
-    				}
+			if(affine_bound == true) {
+				for(i = 0; i < qp->A->row; i++) {
+					fi = 0;
+					for(j = 0; j < qp->A->column; j++) {
+						fi += matrix_at(qp->A, i, j) * matrix_at(qp->x, j, 0);
+					}
 
-    				if(fi > matrix_at(qp->b, i, 0)) {
-    					step_too_large = true;
-    					break;
-    				}
-    			}
-            }
+					if(fi > matrix_at(qp->b, i, 0)) {
+						step_too_large = true;
+						break;
+					}
+				}
+			}
 #endif
 
 			/*================================================================*
@@ -568,10 +568,10 @@ int qp_solve_start(qp_t *qp)
 
 	bool solve_equalities = (qp->A_eq != NULL) && (qp->b_eq != NULL);
 
-    bool lower_bound = qp->lb != NULL;
-    bool upper_bound = qp->ub != NULL;
-    bool affine_bound = (qp->A != NULL) && (qp->b != NULL);
-	bool solve_inequalities = lower_bound | upper_bound | affine_bound; 
+	bool lower_bound = qp->lb != NULL;
+	bool upper_bound = qp->ub != NULL;
+	bool affine_bound = (qp->A != NULL) && (qp->b != NULL);
+	bool solve_inequalities = lower_bound | upper_bound | affine_bound;
 
 	/* no constraint optimization */
 	if(!solve_equalities && !solve_inequalities) {
