@@ -535,6 +535,8 @@ int qp_solve_start(qp_t *qp)
 	if(qp->P == NULL) return QP_ERROR_NO_OBJECTIVE_FUNCTION;
 	if(qp->A_eq == NULL && qp->b_eq != NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
 	if(qp->A_eq != NULL && qp->b_eq == NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
+    if(qp->A == NULL && qp->b != NULL) return QP_ERROR_INCOMPLETE_INEQUAILITY_CONSTRAINT;
+    if(qp->A != NULL && qp->b == NULL) return QP_ERROR_INCOMPLETE_INEQUAILITY_CONSTRAINT;
 
 	bool solve_equalities = (qp->A_eq != NULL) && (qp->b_eq != NULL);
 	bool solve_inequalities = ((qp->A != NULL) && (qp->b != NULL)) ||
