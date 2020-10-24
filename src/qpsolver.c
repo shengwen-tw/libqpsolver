@@ -536,23 +536,27 @@ int qp_solve_start(qp_t *qp)
 	if(qp->A_eq == NULL && qp->b_eq != NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
 	if(qp->A_eq != NULL && qp->b_eq == NULL) return QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT;
 
+	bool solve_equalities = (qp->A_eq != NULL) && (qp->b_eq != NULL);
+	bool solve_inequalities = ((qp->A != NULL) && (qp->b != NULL)) ||
+	                          (qp->lb != NULL) || (qp->ub != NULL);
+
 	/* no constraint optimization */
-	if((qp->A_eq == NULL) && (qp->lb == NULL) && (qp->ub == NULL) && (qp->b == NULL)) {
+	if(!solve_equalities && !solve_inequalities) {
 		qp_solve_no_constraint_problem(qp);
 	}
 
 	/* equality constrained optmization */
-	if((qp->A_eq != NULL) && (qp->lb == NULL) && (qp->ub == NULL) && (qp->b == NULL)) {
+	if(solve_equalities && !solve_inequalities) {
 		qp_solve_equality_constraint_problem(qp);
 	}
 
 	/* inequality constrained optimization */
-	if((qp->A_eq == NULL) && ((qp->lb != NULL) || (qp->ub != NULL) || (qp->b != NULL))) {
+	if(!solve_equalities && solve_inequalities) {
 		qp_solve_inequality_constraint_problem(qp);
 	}
 
 	/* equality-inequality constrained optimization */
-	if((qp->A_eq != NULL) && ((qp->lb != NULL) || (qp->ub != NULL) || (qp->b == NULL))) {
+	if(solve_equalities && solve_inequalities) {
 		qp_solve_all_constraints_problem(qp);
 	}
 
