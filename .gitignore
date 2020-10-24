@@ -3,3 +3,5 @@ test_lapack
 *.d
 *.sw*
 *.o
+*.orig
+octave-workspace
