@@ -23,6 +23,71 @@ void qp_init(qp_t *qp)
 	qp->max_iters = 10000;    //maximum iteration times
 }
 
+bool qp_start_point_feasibility_check(qp_t *qp)
+{
+	float fi;
+	int r, c;
+
+	/* equality constraints */
+	if((qp->A_eq != NULL) && (qp->b_eq != NULL)) {
+		bool infeasible = false;
+		const float tolerance = 1e-3;
+
+		vector_t *Ax = vector_new(qp->b_eq->row, qp->b_eq->column);
+		vector_t *lin_sys_sol = vector_new(qp->b_eq->row, qp->b_eq->column);
+
+		matrix_multiply(qp->A_eq, qp->x, Ax);
+		matrix_sub(Ax, qp->b_eq, lin_sys_sol);
+
+		for(r = 0; r < lin_sys_sol->row; r++) {
+			if(fabs(matrix_at(lin_sys_sol, r, 0)) > tolerance) {
+				infeasible = true;
+			}
+		}
+
+		vector_delete(Ax);
+		vector_delete(lin_sys_sol);
+
+		if(infeasible == true) {
+			return false;
+		}
+	}
+
+	/* lower bound inequality constraints */
+	if(qp->lb != NULL) {
+		for(r = 0; r < qp->lb->row; r++) {
+			if(matrix_at(qp->x, r, 0) < matrix_at(qp->lb, r, 0)) {
+				return false;
+			}
+		}
+	}
+
+	/* upper bound inequality constraints */
+	if(qp->ub != NULL) {
+		for(r = 0; r < qp->lb->row; r++) {
+			if(matrix_at(qp->x, r, 0) > matrix_at(qp->ub, r, 0)) {
+				return false;
+			}
+		}
+	}
+
+	/* affine inequality constraints */
+	if((qp->A != NULL) && (qp->b != NULL)) {
+		for(r = 0; r < qp->A->row; r++) {
+			fi = 0;
+			for(c = 0; c < qp->A->column; c++) {
+				fi += matrix_at(qp->A, r, c) * matrix_at(qp->x, c, 0);
+			}
+
+			if(fi > matrix_at(qp->b, r, 0)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
 {
 	qp->x = x;

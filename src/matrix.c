@@ -99,6 +99,17 @@ void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 	}
 }
 
+void matrix_sub(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
+{
+	int r, c;
+	for(r = 0; r < mat1->row; r++) {
+		for(c = 0; c < mat1->column; c++) {
+			matrix_at(mat_result, r, c) =
+			    matrix_at(mat1, r, c) - matrix_at(mat2, r, c);
+		}
+	}
+}
+
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 {
 	GEMM(CblasRowMajor, CblasNoTrans, CblasNoTrans, mat_result->row,

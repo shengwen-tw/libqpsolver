@@ -67,6 +67,7 @@ int main(void)
 	PRINT_MATRIX(A);
 	PRINT_MATRIX(b);
 
+	/* problem setup */
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
 //	qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
@@ -74,6 +75,16 @@ int main(void)
 	qp_solve_set_upper_bound_inequality_constraints(&qp, &ub);
 	qp_solve_set_affine_inequality_constraints(&qp, &A, &b);
 
+	/* check if start point is in the feasible set */
+	bool feasible = qp_start_point_feasibility_check(&qp);
+	if(feasible == false) {
+		printf("the start point of the problem is infeasible.\n");
+		/* if the start point is identified as infeasible, the user could
+		 * choose to fix by giving a feasible point or ask the solver to
+		 * calculate one. the latter will increase the computation time. */
+	}
+
+	/* activate the solver */
 	double start_time = time();
 	qp_solve_start(&qp);
 	double end_time = time();
