@@ -15,7 +15,7 @@ void qp_init(qp_t *qp)
 	qp->ub = NULL;
 
 	qp->eps = 1e-6;
-	qp->max_iters = 1000000;
+	qp->max_iters = 100;
 	qp->iters = 0;
 }
 
@@ -335,9 +335,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			}
 		}
 #endif
-		VERBOSE_PRINT_MATRIX(*D1_phi);
-		VERBOSE_PRINT_MATRIX(*D2_phi);
-
+	
 		/*============================================================*
 		 * 3. calculate the firt derivative of the objective function *
 		 *============================================================*/
@@ -347,9 +345,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		}
 		vector_scaling(t, D1_f0);
 
-		/*============================================================*
-		 * 4. calculate the second derivate of the objective function *
-		 *============================================================*/
+		/*=========================================================*
+		 * calculate the second derivate of the objective function *
+		 *=========================================================*/
 		matrix_copy(D2_f0, qp->P);
 		matrix_scaling(t, D2_f0);
 
@@ -371,26 +369,54 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			}
 		}
 
-		/*================================*
-		 * 6. calculate the newton's step *
-		 *================================*/
-		matrix_scaling(0.01, D1_f0);
+		/*===================================*
+		 * gradient descent with newton step *
+		 *===================================*/
 
+		//calculate the newton step
 		matrix_inverse(D2_f0, D2_f0_inv);
 		matrix_multiply(D2_f0_inv, D1_f0, newton_step);
-		vector_negate(newton_step);
 
+		//bool step_too_large;
+		while(1) {
+			bool step_too_large = false;
+
+			/* update the optimization variable */
+			for(r = 0; r < qp->x->row; r++) {
+				matrix_at(qp->x, r, 0) = matrix_at(x_last, r, 0) -
+					matrix_at(newton_step, r, 0);
+
+				/*=================================================*
+				 * check if inequality constraints are still valid *
+				 *=================================================*/
+				if(matrix_at(qp->x, r, 0) < matrix_at(qp->lb, r, 0)) {
+					step_too_large = true;
+					break;
+				}
+
+				if(matrix_at(qp->x, r, 0) > matrix_at(qp->ub, r, 0)) {
+					step_too_large = true;
+					break;
+				}
+			}
+
+			/*================================================================*
+			 * schrink the newton step if the step is too large and break the *
+			 * inequality constraints                                         *
+			 *================================================================*/
+			if(step_too_large == false) {
+				break;
+			} else {
+				matrix_scaling(0.9, newton_step);
+			}
+		}
+
+		VERBOSE_PRINT_MATRIX(*D1_phi);
+		VERBOSE_PRINT_MATRIX(*D2_phi);
 		VERBOSE_PRINT_MATRIX(*D1_f0);
 		VERBOSE_PRINT_MATRIX(*D2_f0);
 		VERBOSE_PRINT_MATRIX(*D2_f0_inv);
 		VERBOSE_PRINT_MATRIX(*newton_step);
-
-		/*=====================================*
-		 * 7. update the optimization variable *
-		 *=====================================*/
-		for(r = 0; r < qp->x->row; r++) {
-			matrix_at(qp->x, r, 0) += matrix_at(newton_step, r, 0);
-		}
 		VERBOSE_PRINT_MATRIX(*qp->x);
 
 		qp->iters++;
