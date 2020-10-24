@@ -3,7 +3,7 @@
 #include <math.h>
 #include "qpsolver.h"
 
-void qp_init(qp_t *qp)
+void qp_set_default(qp_t *qp)
 {
 	qp->x = NULL;
 	qp->P = NULL;
@@ -13,6 +13,8 @@ void qp_init(qp_t *qp)
 	qp->b_eq = NULL;
 	qp->lb = NULL;
 	qp->ub = NULL;
+	qp->A = NULL;
+	qp->b = NULL;
 
 	qp->iters = 0;
 

@@ -48,7 +48,7 @@ typedef struct {
 	int iters;
 } qp_t;
 
-void qp_init(qp_t *qp);
+void qp_set_default(qp_t *qp);
 bool qp_start_point_feasibility_check(qp_t *qp);
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x);
 void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r);

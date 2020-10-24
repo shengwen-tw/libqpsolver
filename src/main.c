@@ -20,7 +20,7 @@ int main(void)
 {
 	/* quadratic programming */
 	qp_t qp;
-	qp_init(&qp);
+	qp_set_default(&qp);
 
 	//optimization variable
 	matrix_t x;
