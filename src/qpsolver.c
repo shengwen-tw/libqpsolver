@@ -17,8 +17,8 @@ void qp_init(qp_t *qp)
 	qp->iters = 0;
 
 	qp->eps = 1e-6;        //residual value to stop the optimization
-	qp->a = 0.9;           //line searching parameter of the newton step
-	qp->mu = 1.5;          //stiffness growth rate of the log barrier function
+	qp->a = 0.95;           //line searching parameter of the newton step
+	qp->mu = 3.5;          //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial value of log barrier stiffness
 	qp->max_iters = 10000;    //maximum iteration times
 }
@@ -111,7 +111,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	for(r = 0; r < qp->b_eq->row; r++) {
 		//copy b
 		matrix_at(&qb_vec, r + qp->q->row, 0) =
-			matrix_at(qp->b_eq, r, 0);
+		    matrix_at(qp->b_eq, r, 0);
 	}
 	VERBOSE_PRINT_MATRIX(qb_vec);
 
@@ -135,14 +135,14 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	for(r = 0; r < qp->A_eq->column; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
 			matrix_at(&KKT, r, (c + qp->A_eq->column)) =
-				matrix_at(qp->A_eq, c, r);
+			    matrix_at(qp->A_eq, c, r);
 		}
 	}
 	//copy A
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->column; c++) {
 			matrix_at(&KKT, (r + qp->P->row), c) =
-				matrix_at(qp->A_eq, r, c);
+			    matrix_at(qp->A_eq, r, c);
 		}
 	}
 	//set zero matrix
@@ -181,6 +181,8 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 static void qp_solve_inequality_constraint_problem(qp_t *qp)
 {
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
+
+	const FLOAT epsilon = 1e-14;
 
 	//log barrier's parameter
 	float t = qp->t_init;
@@ -223,7 +225,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
 		/* preseve last x for checking convergence */
-		vector_copy(x_last, qp->x);	
+		vector_copy(x_last, qp->x);
 
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
@@ -239,8 +241,10 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		//first derivative
 		for(r = 0; r < qp->lb->row; r++) {
 			fi = -matrix_at(qp->x, r, 0) + matrix_at(qp->lb, r, 0);
-			div_fi = 1 / fi;
-			div_fi_squared = 1 / (fi * fi);
+			div_fi = 1 / (fi + epsilon);
+			div_fi_squared = 1 / ((fi * fi) + epsilon);
+
+
 
 			matrix_at(D1_phi, r, 0) += div_fi;
 
@@ -256,8 +260,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
-					matrix_at(D2_phi, i, j) += 
-						(div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+					matrix_at(D2_phi, i, j) +=
+					    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
 				}
 			}
 		}
@@ -272,8 +276,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		//first derivative
 		for(r = 0; r < qp->ub->row; r++) {
 			fi = matrix_at(qp->x, r, 0) -  matrix_at(qp->ub, r, 0);
-			div_fi = -(1 / fi);
-			div_fi_squared = 1 / (fi * fi);
+			div_fi = -1 / (fi + epsilon);
+			div_fi_squared = 1 / ((fi * fi) + epsilon);
 
 			matrix_at(D1_phi, r, 0) += div_fi;
 
@@ -289,8 +293,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
-					matrix_at(D2_phi, i, j) += 
-						(div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+					matrix_at(D2_phi, i, j) +=
+					    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
 				}
 			}
 		}
@@ -307,13 +311,13 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 				fi += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
 			}
 			fi -= matrix_at(qp->b, r, 0);
-			div_fi = -(1 / fi);
-			div_fi_squared = 1 / (fi * fi);
+			div_fi = -1 / (fi + epsilon);
+			div_fi_squared = 1 / ((fi * fi) + epsilon);
 
 			/* calculate first derivative */
 			for(i = 0; i < D1_phi->row; i++) {
 				matrix_at(D1_phi, i, 0) +=
-					div_fi * matrix_at(qp->A, r, i);
+				    div_fi * matrix_at(qp->A, r, i);
 
 				matrix_at(D1_fi, i, 0) = matrix_at(qp->A, r, i);
 			}
@@ -325,12 +329,12 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			for(i = 0; i < D2_phi->row; i++) {
 				for(j = 0; j < D2_phi->column; j++) {
 					matrix_at(D2_phi, i, j) +=
-						div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+					    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 				}
 			}
 		}
 #endif
-	
+
 		/*============================================================*
 		 * 3. calculate the firt derivative of the objective function *
 		 *============================================================*/
@@ -379,7 +383,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			/* update the optimization variable */
 			for(r = 0; r < qp->x->row; r++) {
 				matrix_at(qp->x, r, 0) = matrix_at(x_last, r, 0) -
-					matrix_at(newton_step, r, 0);
+				                         matrix_at(newton_step, r, 0);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 				/*==================================================*
@@ -480,7 +484,7 @@ int qp_solve_start(qp_t *qp)
 	/* inequality constrained optimization */
 	if((qp->A_eq == NULL) && ((qp->lb != NULL) || (qp->ub != NULL) || (qp->b != NULL))) {
 		qp_solve_inequality_constraint_problem(qp);
-	} 
+	}
 
 	/* equality-inequality constrained optimization */
 	if((qp->A_eq != NULL) && ((qp->lb != NULL) || (qp->ub != NULL) || (qp->b == NULL))) {

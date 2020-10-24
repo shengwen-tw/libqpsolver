@@ -11,7 +11,7 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 
 	int *pivots = (int *)malloc(sizeof(int) * A->row);
 	GESV(LAPACK_ROW_MAJOR, A->row, X->column,
-		      A->data, A->column, pivots, X->data, X->column);
+	     A->data, A->column, pivots, X->data, X->column);
 	free(pivots);
 }
 
@@ -94,7 +94,7 @@ void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 	for(r = 0; r < mat1->row; r++) {
 		for(c = 0; c < mat1->column; c++) {
 			matrix_at(mat_result, r, c) =
-				matrix_at(mat1, r, c) + matrix_at(mat2, r, c);
+			    matrix_at(mat1, r, c) + matrix_at(mat2, r, c);
 		}
 	}
 }

@@ -25,37 +25,37 @@ int main(void)
 	//optimization variable
 	matrix_t x;
 	matrix_construct(&x, 2, 1, ELEMENTS(0,
-				            0));
+	                                    0));
 
 	//objective function
 	matrix_t P, q;
 	matrix_construct(&P, 2, 2, ELEMENTS(+1, -1,
-                                            -1, +2));
+	                                    -1, +2));
 	matrix_construct(&q, 2, 1, ELEMENTS(-2,
-                                            -6));
+	                                    -6));
 
 	//equaility constraint
 	matrix_t A_eq, b_eq;
 	matrix_construct(&A_eq, 1, 2, ELEMENTS(1, 2,
-                                               1, 1));
+	                                       1, 1));
 	matrix_construct(&b_eq, 2, 1, ELEMENTS(0,
-                                               0));
+	                                       0));
 
 	//inequality constraints
 	vector_t lb, ub;
 	vector_construct(&lb, 2, 1, ELEMENTS(-1,
-                                             -1));
+	                                     -1));
 
 	vector_construct(&ub, 2, 1, ELEMENTS(3.4,
-                                             3.3));
+	                                     3.3));
 
 	matrix_t A, b;
 	matrix_construct(&A, 3, 2, ELEMENTS(+1, +1,
-                                            -1, +2,
-                                            +2, +1));
+	                                    -1, +2,
+	                                    +2, +1));
 	matrix_construct(&b, 3, 1, ELEMENTS(2,
-                                            2,
-                                            3));
+	                                    2,
+	                                    3));
 
 	PRINT_MATRIX(x);
 	PRINT_MATRIX(P);
@@ -82,8 +82,8 @@ int main(void)
 	PRINT_MATRIX(x);
 
 	printf("run time: %lf seconds\n"
-               "optimization took %d iterations\n",
-               end_time - start_time, qp.iters);
+	       "optimization took %d iterations\n",
+	       end_time - start_time, qp.iters);
 
 	return 0;
 }
