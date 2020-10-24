@@ -40,6 +40,9 @@ typedef struct {
 
 	/* stop criterions */
 	FLOAT eps;
+	FLOAT a;
+	FLOAT t_init;
+	FLOAT mu;
 	int max_iters;
 	int iters;
 } qp_t;

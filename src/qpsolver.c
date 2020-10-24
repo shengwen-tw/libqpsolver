@@ -14,9 +14,13 @@ void qp_init(qp_t *qp)
 	qp->lb = NULL;
 	qp->ub = NULL;
 
-	qp->eps = 1e-6;
-	qp->max_iters = 100;
 	qp->iters = 0;
+
+	qp->eps = 1e-6;        //residual value to stop the optimization
+	qp->a = 0.9;           //line searching parameter of the newton step
+	qp->mu = 3.5;          //stiffness growth rate of the log barrier function
+	qp->t_init = 1;        //initial value of log barrier stiffness
+	qp->max_iters = 10000; //maximum iteration times
 }
 
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
@@ -179,7 +183,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	VERBOSE_PRINT("identify qudratic programming problem with inequality constraint\n");
 
 	//log barrier's parameter
-	float t = 2000.0f;
+	float t = qp->t_init;
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
@@ -189,6 +193,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the objective function
 	matrix_t *D2_f0 = matrix_new(qp->P->row, qp->P->column);
+	matrix_copy(D2_f0, qp->P);
 	//inverted second derivative of the objective function
 	matrix_t *D2_f0_inv = matrix_new(qp->x->row, qp->x->row);
 
@@ -220,7 +225,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		/* preseve last x for checking convergence */
 		vector_copy(x_last, qp->x);	
 
-		t *= 1.001;
+		/* increase the stiffness of the log barrier functions */
+		t *= qp->mu;
 
 		matrix_reset_zeros(D1_phi);
 		matrix_reset_zeros(D2_phi);
@@ -348,7 +354,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 		/*=========================================================*
 		 * calculate the second derivate of the objective function *
 		 *=========================================================*/
-		matrix_copy(D2_f0, qp->P);
 		matrix_scaling(t, D2_f0);
 
 		/*=====================================================================*
@@ -407,7 +412,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp)
 			if(step_too_large == false) {
 				break;
 			} else {
-				matrix_scaling(0.9, newton_step);
+				matrix_scaling(qp->a, newton_step);
 			}
 		}
 
