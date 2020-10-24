@@ -1,6 +1,11 @@
 #ifndef __LIBQPSOLVER_H__
 #define __LIBQPSOLVER_H__
 
+/*======================================*
+ * enable internal debug message output *
+ *======================================*/
+#define VERBOSE 0
+
 /*====================================*
  * floating-point data type precision *
  *====================================*/
@@ -16,9 +21,9 @@
 /*========================================================*
  * turn off the unnecessary function to speed up the time *
  *========================================================*/
-#define ENABLE_LOWER_BOUND_INEQUALITY 1
-#define ENABLE_UPPER_BOUND_INEQUALITY 1
-#define ENABLE_AFFINE_INEQUALITY      0
+#define ENABLE_LOWER_BOUND_INEQUALITY 0
+#define ENABLE_UPPER_BOUND_INEQUALITY 0
+#define ENABLE_AFFINE_INEQUALITY      1
 
 /*=======================================================*
  * select lapack/cblas helper function according to the  *

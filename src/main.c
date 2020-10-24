@@ -24,8 +24,8 @@ int main(void)
 
 	//optimization variable
 	matrix_t x;
-	matrix_construct(&x, 2, 1, ELEMENTS(1.1,
-				            1.1));
+	matrix_construct(&x, 2, 1, ELEMENTS(0,
+				            0));
 
 	//objective function
 	matrix_t P, q;

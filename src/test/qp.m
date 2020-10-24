@@ -17,7 +17,7 @@ b_eq = []
 
 lb = [-1;
       -1];
-ub = [+1;
-      +1];
+ub = [+3.4;
+      +3.3];
 
 x = quadprog(P, q, A, b, A_eq, b_eq, lb, ub)
