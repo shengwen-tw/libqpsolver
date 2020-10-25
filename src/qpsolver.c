@@ -298,6 +298,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
 
+        matrix_reset_zeros(D1_phi);
+        matrix_reset_zeros(D2_phi);
+
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
 		 * calculate first and second derivative of lower bound inequalities *
@@ -314,14 +317,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 				matrix_at(D1_fi, r, 0) = -1;
 
 				//first derivative of the log barrier function
-				matrix_at(D1_phi, r, 0) = div_fi;
+				matrix_at(D1_phi, r, 0) += div_fi;
 
 				//second derivative of the log barrier function
 				matrix_transpose(D1_fi, D1_fi_t);
 				matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
 				for(i = 0; i < D2_phi->row; i++) {
 					for(j = 0; j < D2_phi->column; j++) {
-						matrix_at(D2_phi, i, j) =
+						matrix_at(D2_phi, i, j) +=
 						    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
 					}
 				}
