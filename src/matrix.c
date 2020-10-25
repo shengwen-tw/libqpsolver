@@ -99,6 +99,16 @@ void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 	}
 }
 
+void matrix_add_by(matrix_t *lhs, matrix_t *rhs)
+{
+	int r, c;
+	for(r = 0; r < lhs->row; r++) {
+		for(c = 0; c < lhs->column; c++) {
+			matrix_at(lhs, r, c) += matrix_at(rhs, r, c);
+		}
+	}
+}
+
 void matrix_sub(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 {
 	int r, c;

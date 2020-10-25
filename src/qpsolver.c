@@ -298,44 +298,32 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
 
-		matrix_reset_zeros(D1_phi);
-		matrix_reset_zeros(D2_phi);
-
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
 		 * calculate first and second derivative of lower bound inequalities *
 		 *===================================================================*/
 
-lower_bound_derivatives:
+		if(lower_bound == true) {
+			for(r = 0; r < qp->lb->row; r++) {
+				fi = -matrix_at(qp->x, r, 0) + matrix_at(qp->lb, r, 0);
+				div_fi = 1 / (fi + epsilon);
+				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-		if(lower_bound == false) {
-			goto upper_bound_derivatives;
-		}
+                //first derivative of the inequality constraint function
+                matrix_reset_zeros(D1_fi);
+				matrix_at(D1_fi, r, 0) = -1;
 
-		//first derivative
-		for(r = 0; r < qp->lb->row; r++) {
-			fi = -matrix_at(qp->x, r, 0) + matrix_at(qp->lb, r, 0);
-			div_fi = 1 / (fi + epsilon);
-			div_fi_squared = 1 / ((fi * fi) + epsilon);
+				//first derivative of the log barrier function
+				matrix_at(D1_phi, r, 0) = div_fi;
 
-
-
-			matrix_at(D1_phi, r, 0) += div_fi;
-
-			for(i = 0; i < D1_fi->row; i++) {
-				for(j = 0; j < D1_fi->column; j++) {
-					matrix_at(D1_fi, i, j) = 0;
-				}
-			}
-			matrix_at(D1_fi, r, 0) = -1;
-
-			//second derivative
-			matrix_transpose(D1_fi, D1_fi_t);
-			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-			for(i = 0; i < D2_phi->row; i++) {
-				for(j = 0; j < D2_phi->column; j++) {
-					matrix_at(D2_phi, i, j) +=
-					    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+				//second derivative of the log barrier function
+				matrix_transpose(D1_fi, D1_fi_t);
+				matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
+				for(i = 0; i < D2_phi->row; i++) {
+					for(j = 0; j < D2_phi->column; j++) {
+						matrix_at(D2_phi, i, j) =
+						    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+					}
 				}
 			}
 		}
@@ -346,34 +334,27 @@ lower_bound_derivatives:
 		 * calculate first and second derivative of upper bound inequalities *
 		 *===================================================================*/
 
-upper_bound_derivatives:
+		if(upper_bound == true) {
+			for(r = 0; r < qp->ub->row; r++) {
+				fi = matrix_at(qp->x, r, 0) -  matrix_at(qp->ub, r, 0);
+				div_fi = -1 / (fi + epsilon);
+				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-		if(upper_bound == false) {
-			goto affine_bound_derivatives;
-		}
+                //first derivative of the inequality constraint function
+                matrix_reset_zeros(D1_fi);
+				matrix_at(D1_fi, r, 0) = 1;
 
-		//first derivative
-		for(r = 0; r < qp->ub->row; r++) {
-			fi = matrix_at(qp->x, r, 0) -  matrix_at(qp->ub, r, 0);
-			div_fi = -1 / (fi + epsilon);
-			div_fi_squared = 1 / ((fi * fi) + epsilon);
+				//first derivative of the log barrier function
+				matrix_at(D1_phi, r, 0) += div_fi;
 
-			matrix_at(D1_phi, r, 0) += div_fi;
-
-			for(i = 0; i < D1_fi->row; i++) {
-				for(j = 0; j < D1_fi->column; j++) {
-					matrix_at(D1_fi, i, j) = 0;
-				}
-			}
-			matrix_at(D1_fi, r, 0) = 1;
-
-			//second derivative
-			matrix_transpose(D1_fi, D1_fi_t);
-			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-			for(i = 0; i < D2_phi->row; i++) {
-				for(j = 0; j < D2_phi->column; j++) {
-					matrix_at(D2_phi, i, j) +=
-					    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+				//second derivative of the log barrier function
+				matrix_transpose(D1_fi, D1_fi_t);
+				matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
+				for(i = 0; i < D2_phi->row; i++) {
+					for(j = 0; j < D2_phi->column; j++) {
+						matrix_at(D2_phi, i, j) +=
+						    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
+					}
 				}
 			}
 		}
@@ -383,38 +364,35 @@ upper_bound_derivatives:
 		/*==============================================================*
 		 * calculate first and second derivative of affine inequalities *
 		 *==============================================================*/
-affine_bound_derivatives:
 
-		if(affine_bound == false) {
-			goto objective_function_derivatives;
-		}
+		if(affine_bound == true) {
+			for(r = 0; r < qp->A->row; r++) {
+				/* calculate constraint function value */
+				fi = 0;
+				for(j = 0; j < qp->A->column; j++) {
+					fi += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
+				}
+				fi -= matrix_at(qp->b, r, 0);
+				div_fi = -1 / (fi + epsilon);
+				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-		for(r = 0; r < qp->A->row; r++) {
-			/* calculate constraint function value */
-			fi = 0;
-			for(j = 0; j < qp->A->column; j++) {
-				fi += matrix_at(qp->A, r, j) * matrix_at(qp->x, j, 0);
-			}
-			fi -= matrix_at(qp->b, r, 0);
-			div_fi = -1 / (fi + epsilon);
-			div_fi_squared = 1 / ((fi * fi) + epsilon);
+				/* calculate first derivative */
+				for(i = 0; i < D1_phi->row; i++) {
+					matrix_at(D1_phi, i, 0) +=
+					    div_fi * matrix_at(qp->A, r, i);
 
-			/* calculate first derivative */
-			for(i = 0; i < D1_phi->row; i++) {
-				matrix_at(D1_phi, i, 0) +=
-				    div_fi * matrix_at(qp->A, r, i);
+					matrix_at(D1_fi, i, 0) = matrix_at(qp->A, r, i);
+				}
 
-				matrix_at(D1_fi, i, 0) = matrix_at(qp->A, r, i);
-			}
+				/* calculate second derivative */
+				matrix_transpose(D1_fi, D1_fi_t);
+				matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
 
-			/* calculate second derivative */
-			matrix_transpose(D1_fi, D1_fi_t);
-			matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-
-			for(i = 0; i < D2_phi->row; i++) {
-				for(j = 0; j < D2_phi->column; j++) {
-					matrix_at(D2_phi, i, j) +=
-					    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+				for(i = 0; i < D2_phi->row; i++) {
+					for(j = 0; j < D2_phi->column; j++) {
+						matrix_at(D2_phi, i, j) +=
+						    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+					}
 				}
 			}
 		}
@@ -423,12 +401,9 @@ affine_bound_derivatives:
 		/*============================================================*
 		 * 3. calculate the firt derivative of the objective function *
 		 *============================================================*/
-objective_function_derivatives:
 
 		matrix_multiply(qp->P, qp->x, D1_f0);
-		for(r = 0; r < qp->x->row; r++) {
-			matrix_at(D1_f0, r, 0) += matrix_at(qp->q, r, 0);
-		}
+		matrix_add_by(D1_f0, qp->q);
 		vector_scaling(t, D1_f0);
 
 		/*=========================================================*
@@ -441,19 +416,8 @@ objective_function_derivatives:
 		 * combine derivatives of objective function and log barrier functions *
 		 *=====================================================================*/
 
-		/* first derivative */
-		for(r = 0; r < D1_f0->row; r++) {
-			for(c = 0; c < D1_f0->column; c++) {
-				matrix_at(D1_f0, r, c) += matrix_at(D1_phi, r, c);
-			}
-		}
-
-		/* second derivative */
-		for(r = 0; r < D2_f0->row; r++) {
-			for(c = 0; c < D2_f0->column; c++) {
-				matrix_at(D2_f0, r, c) += matrix_at(D2_phi, r, c);
-			}
-		}
+		matrix_add_by(D1_f0, D1_phi);
+		matrix_add_by(D2_f0, D2_phi);
 
 		/*===================================*
 		 * gradient descent with newton step *
@@ -462,6 +426,7 @@ objective_function_derivatives:
 		//calculate the newton step
 		matrix_inverse(D2_f0, D2_f0_inv);
 		matrix_multiply(D2_f0_inv, D1_f0, newton_step);
+		matrix_scaling(-1, newton_step);
 
 		bool step_too_large;
 		while(1) {
@@ -469,8 +434,7 @@ objective_function_derivatives:
 
 			/* update the optimization variable */
 			for(r = 0; r < qp->x->row; r++) {
-				matrix_at(qp->x, r, 0) = matrix_at(x_last, r, 0) -
-				                         matrix_at(newton_step, r, 0);
+				matrix_add(x_last, newton_step, qp->x);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 				/*==================================================*
