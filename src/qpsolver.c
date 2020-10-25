@@ -298,8 +298,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
 
-        matrix_reset_zeros(D1_phi);
-        matrix_reset_zeros(D2_phi);
+		matrix_reset_zeros(D1_phi);
+		matrix_reset_zeros(D2_phi);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
@@ -312,8 +312,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 				div_fi = 1 / (fi + epsilon);
 				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-                //first derivative of the inequality constraint function
-                matrix_reset_zeros(D1_fi);
+				//first derivative of the inequality constraint function
+				matrix_reset_zeros(D1_fi);
 				matrix_at(D1_fi, r, 0) = -1;
 
 				//first derivative of the log barrier function
@@ -343,8 +343,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool lower_bound,
 				div_fi = -1 / (fi + epsilon);
 				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-                //first derivative of the inequality constraint function
-                matrix_reset_zeros(D1_fi);
+				//first derivative of the inequality constraint function
+				matrix_reset_zeros(D1_fi);
 				matrix_at(D1_fi, r, 0) = 1;
 
 				//first derivative of the log barrier function
