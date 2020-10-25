@@ -43,10 +43,10 @@ int main(void)
 
 	//inequality constraints
 	vector_t lb, ub;
-	vector_construct(&lb, 2, 1, ELEMENTS(-1,
+	matrix_construct(&lb, 2, 1, ELEMENTS(-1,
 	                                     -1));
 
-	vector_construct(&ub, 2, 1, ELEMENTS(3.4,
+	matrix_construct(&ub, 2, 1, ELEMENTS(3.4,
 	                                     3.3));
 
 	matrix_t A, b;

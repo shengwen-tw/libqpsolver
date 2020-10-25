@@ -35,8 +35,8 @@ bool qp_start_point_feasibility_check(qp_t *qp)
 		bool infeasible = false;
 		const float tolerance = 1e-3;
 
-		vector_t *Ax = vector_new(qp->b_eq->row, qp->b_eq->column);
-		vector_t *lin_sys_sol = vector_new(qp->b_eq->row, qp->b_eq->column);
+		vector_t *Ax = matrix_new(qp->b_eq->row, qp->b_eq->column);
+		vector_t *lin_sys_sol = matrix_new(qp->b_eq->row, qp->b_eq->column);
 
 		matrix_multiply(qp->A_eq, qp->x, Ax);
 		matrix_sub(Ax, qp->b_eq, lin_sys_sol);
@@ -47,8 +47,8 @@ bool qp_start_point_feasibility_check(qp_t *qp)
 			}
 		}
 
-		vector_delete(Ax);
-		vector_delete(lin_sys_sol);
+		matrix_delete(Ax);
+		matrix_delete(lin_sys_sol);
 
 		if(infeasible == true) {
 			return false;
@@ -246,7 +246,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
-	vector_copy(x_last, qp->x);
+	matrix_copy(x_last, qp->x);
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
@@ -268,7 +268,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
 
 	//newton step's vector
-	vector_t *newton_step = vector_new(qp->x->row, qp->x->column);
+	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	float fi = 0;
@@ -282,7 +282,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
 		/* preseve last x for checking convergence */
-		vector_copy(x_last, qp->x);
+		matrix_copy(x_last, qp->x);
 
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
@@ -396,7 +396,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 		matrix_multiply(qp->P, qp->x, D1_f0);
 		matrix_add_by(D1_f0, qp->q);
-		vector_scaling(t, D1_f0);
+		matrix_scaling(t, D1_f0);
 
 		/*=========================================================*
 		 * calculate the second derivate of the objective function *
@@ -511,7 +511,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_delete(D1_fi_t);
 	matrix_delete(D1_fi_D1_fi_t);
 	matrix_delete(D2_phi);
-	vector_delete(newton_step);
+	matrix_delete(newton_step);
 }
 
 int qp_solve_start(qp_t *qp)

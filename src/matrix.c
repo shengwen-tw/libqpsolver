@@ -15,10 +15,6 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	free(pivots);
 }
 
-/*===================*
- * matrix operations *
- *===================*/
-
 void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data)
 {
 	mat->row = r;
@@ -148,78 +144,6 @@ void matrix_scaling(float scaler, matrix_t *mat)
 		for(c = 0; c < mat->column; c++) {
 			matrix_at(mat, r, c) *= scaler;
 		}
-	}
-}
-
-/*====================*
- * vector opertations *
- *====================*/
-
-void vector_construct(vector_t *vec, int r, int c, FLOAT *data)
-{
-	vec->row = r;
-	vec->column = c;
-	vec->data = data;
-}
-
-matrix_t* vector_new(int r, int c)
-{
-	matrix_t *vec = (vector_t *)malloc(sizeof(vector_t));
-
-	vec->row = r;
-	vec->column = c;
-	vec->data = (FLOAT *)malloc(sizeof(FLOAT) * r * c);
-
-	return vec;
-}
-
-vector_t* vector_zeros(int r, int c)
-{
-	vector_t *vec = (vector_t *)malloc(sizeof(vector_t));
-
-	vec->row = r;
-	vec->column = c;
-	vec->data = (FLOAT *)calloc(r * c, sizeof(FLOAT));
-
-	return vec;
-}
-
-void vector_delete(vector_t *vec)
-{
-	if(vec->data != NULL) free(vec->data);
-}
-
-void vector_reset_zeros(matrix_t *vec)
-{
-	int r, c;
-	for(r = 0; r < vec->row; r++) {
-		for(c = 0; c < vec->column; c++) {
-			vector_at(vec, r, c) = 0;
-		}
-	}
-}
-
-void vector_scaling(float scaler, vector_t *vec)
-{
-	int r;
-	for(r = 0; r < vec->row; r++) {
-		matrix_at(vec, r, 0) *= scaler;
-	}
-}
-
-void vector_copy(vector_t *dest, vector_t *src)
-{
-	int r;
-	for(r = 0; r < dest->row; r++) {
-		matrix_at(dest, r, 0) = matrix_at(src, r, 0);
-	}
-}
-
-void vector_negate(vector_t *vec)
-{
-	int r;
-	for(r = 0; r < vec->row; r++) {
-		matrix_at(vec, r, 0) *= -1;
 	}
 }
 
