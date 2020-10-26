@@ -9,14 +9,14 @@ int main(void)
 	printf("1.solve linear system AX=B:\n");
 
 	/* solve Ax = b */
-    matrix_t A, B, X;
-    matrix_construct(&A, 3, 3, ELEMENTS(3, 5, 2,
-                                        2, 1, 3,
-                                        4, 3, 2));
+	matrix_t A, B, X;
+	matrix_construct(&A, 3, 3, ELEMENTS(3, 5, 2,
+	                                    2, 1, 3,
+	                                    4, 3, 2));
 
 	matrix_construct(&B, 3, 2, ELEMENTS(57, 23,
-                                        22, 12,
-                                        41, 84));
+	                                    22, 12,
+	                                    41, 84));
 
 	matrix_construct(&X, 3, 2, ELEMENTS(0, 0,
 	                                    0, 0,
@@ -31,9 +31,9 @@ int main(void)
 	/* solve matrix inversion */
 	printf("\n2.solve matrix inversion inv(M):\n");
 
-    matrix_t M, M_inv;
+	matrix_t M, M_inv;
 	matrix_construct(&M, 3, 3, ELEMENTS( 1,  0,  2,
-	                                    -1,  5,  0,
+	                                     -1,  5,  0,
 	                                     0,  3, -9));
 
 	matrix_construct(&M_inv, 3, 3, ELEMENTS(0, 0, 0,
@@ -50,6 +50,14 @@ int main(void)
 	PRINT_MATRIX(A);
 	PRINT_MATRIX(X);
 	PRINT_MATRIX(B);
+
+	/* solve QR factorization */
+	matrix_t H;
+	matrix_construct(&H, 4, 4, ELEMENTS(16,  2,  3, 13,
+	                                    5, 11, 10,  8,
+	                                    9,  7,  6, 12,
+	                                    4, 14, 15,  1));
+	matrix_qr_factorization(&H);
 
 	return 0;
 }

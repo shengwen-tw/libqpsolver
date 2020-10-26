@@ -59,4 +59,16 @@
 #define GEMM cblas_dgemm
 #endif
 
+#if (FLOAT_PRECISION == USE_FLOAT)
+#define GEQRF LAPACKE_sgeqrf
+#elif (FLOAT_PRECISION == USE_DOUBLE)
+#define GEQRF LAPACKE_dgeqrf
+#endif
+
+#if (FLOAT_PRECISION == USE_FLOAT)
+#define ORGQR LAPACKE_sorgqr
+#elif (FLOAT_PRECISION == USE_DOUBLE)
+#define ORGQR LAPACKE_dorgqr
+#endif
+
 #endif
