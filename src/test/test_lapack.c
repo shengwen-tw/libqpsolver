@@ -9,20 +9,18 @@ int main(void)
 	printf("1.solve linear system AX=B:\n");
 
 	/* solve Ax = b */
-	DECLARE_MATRIX(A, 3, 3,
-		       (3, 5, 2,
-		        2, 1, 3,
-		        4, 3, 2));
+    matrix_t A, B, X;
+    matrix_construct(&A, 3, 3, ELEMENTS(3, 5, 2,
+                                        2, 1, 3,
+                                        4, 3, 2));
 
-	DECLARE_MATRIX(B, 3, 2,
-		       (57, 23,
-		        22, 12,
-		        41, 84));
+	matrix_construct(&B, 3, 2, ELEMENTS(57, 23,
+                                        22, 12,
+                                        41, 84));
 
-	DECLARE_MATRIX(X, 3, 2,
-		       (0, 0,
-		        0, 0,
-			0, 0));
+	matrix_construct(&X, 3, 2, ELEMENTS(0, 0,
+	                                    0, 0,
+	                                    0, 0));
 
 	solve_linear_system(&A, &X, &B);
 
@@ -33,15 +31,14 @@ int main(void)
 	/* solve matrix inversion */
 	printf("\n2.solve matrix inversion inv(M):\n");
 
-	DECLARE_MATRIX(M, 3, 3,
-		       ( 1,  0,  2,
-		        -1,  5,  0,
-		         0,  3, -9));
+    matrix_t M, M_inv;
+	matrix_construct(&M, 3, 3, ELEMENTS( 1,  0,  2,
+	                                    -1,  5,  0,
+	                                     0,  3, -9));
 
-	DECLARE_MATRIX(M_inv, 3, 3,
-		       (0, 0, 0,
-		        0, 0, 0,
-		        0, 0, 0));
+	matrix_construct(&M_inv, 3, 3, ELEMENTS(0, 0, 0,
+	                                        0, 0, 0,
+	                                        0, 0, 0));
 
 	matrix_inverse(&M, &M_inv);
 	PRINT_MATRIX(M);
