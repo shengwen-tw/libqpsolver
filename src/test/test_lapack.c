@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <mkl.h>
 #include <mkl_lapacke.h>
 #include "libqpsolver.h"
@@ -87,12 +88,67 @@ void test_qr_factorization(void)
 	PRINT_MATRIX(*R);
 }
 
+void test_solve_null_space(void)
+{
+	printf("\nsolve null space of A with QR decomposition:\n");
+
+	matrix_t A;
+	matrix_construct(&A, 4, 6, ELEMENTS(+1, +4, +0, +1, -3, +2,
+	                                    +2, +8, +1, +1, -4, +6,
+	                                    -1, -4, -1, +0, +1, -2,
+	                                    +1, +4, +0, +1, -3, +1));
+	matrix_t *At = matrix_new(6, 4);
+	matrix_transpose(&A, At);
+
+	matrix_t *Q = matrix_zeros(6, 6);  //Q is orthogonal matrix
+	matrix_t *R = matrix_zeros(6, 4);  //R is upper triagnle matrix
+	matrix_qr_factorization(At, Q, R); //decompose transpose(A) using QR factorization
+
+	/* test the accuracy of QR factorization */
+	matrix_t *tmp = matrix_new(6, 4);
+	matrix_t *A_test = matrix_new(4, 6);
+	matrix_multiply(Q, R, tmp);    //calculate QR
+	matrix_transpose(tmp, A_test); //A_test = transpose(QR)
+
+	/* calculate the zeros row count of R matrix */
+	int n_zero_cols = 0;
+	int r, c;
+	for(r = (R->row - 1); r >= 0; r--) {
+		FLOAT norm = 0;
+		for(c = 0; c < R->column; c++) {
+			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
+		}
+
+		if(fabs(norm) < 1e-8) {
+			n_zero_cols++;
+		}
+	}
+
+	/* copy null space bias vectors from Q matrix */
+	matrix_t *N_A = matrix_new(Q->row, n_zero_cols);
+	for(r = 0; r < N_A->row; r++) {
+		for(c = 0; c < n_zero_cols; c++) {
+			matrix_at(N_A, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
+		}
+	}
+
+	printf("if A is very close to A_test then the result of Null(A) is correct:\n");
+	PRINT_MATRIX(A);
+	PRINT_MATRIX(*A_test);
+	printf("QR decomposition of transpose(A):\n");
+	PRINT_MATRIX(*Q);
+	PRINT_MATRIX(*R);
+	printf("Null space of A:\n");
+	PRINT_MATRIX(*N_A);
+}
+
 int main(void)
 {
 	test_solve_linear_system();
 	test_matrix_inversion();
 	test_matrix_multiplication();
 	test_qr_factorization();
+	test_solve_null_space();
 
 	return 0;
 }

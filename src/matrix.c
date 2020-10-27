@@ -37,8 +37,6 @@ void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
 	matrix_copy(Q_packed, R);
 	ORGQR(LAPACK_ROW_MAJOR, m, rank, rank, Q_packed->data, n, tau);
 
-	PRINT_MATRIX(*Q_packed);
-
 	//Q matrix
 	int r, c;
 	for(r = 0; r < Q->row; r++) {
@@ -118,8 +116,8 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 void matrix_copy(matrix_t *dest, matrix_t *src)
 {
 	int r, c;
-	for(r = 0; r < src->row; r++) {
-		for(c = 0; c < src->column; c++) {
+	for(r = 0; r < dest->row; r++) {
+		for(c = 0; c < dest->column; c++) {
 			matrix_at(dest, r, c) = matrix_at(src, r, c);
 		}
 	}

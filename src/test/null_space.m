@@ -1,10 +1,10 @@
-A = [16   2   3  13
-      5  11  10   8
-      9   7   6  12
-      4  14  15   1]
+A = [+1 +4 +0 +1 -3 +2;
+     +2 +8 +1 +1 -4 +6;
+     -1 -4 -1 +0 +1 -2;
+     +1 +4 +0 +1 -3 +1]
 
-null(A)
+N_A = null(A)
 
 %the n-th column of Q is a basis vector of N(A)
 %if the corresponging n-th row of R has all zero entries
-[Q, R] = qr(transpose(A))
+[Q, R] = qr(A.')
