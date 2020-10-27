@@ -73,36 +73,39 @@ void test_qr_factorization(void)
 {
 	printf("\n4.solve QR factorization:\n");
 
-	matrix_t A, *Q, *R;
+	matrix_t A; //A is m-by-n matrix
 	matrix_construct(&A, 4, 6, ELEMENTS(+1, +4, +0, +1, -3, +2,
 	                                    +2, +8, +1, +1, -4, +6,
 	                                    -1, -4, -1, +0, +1, -2,
 	                                    +1, +4, +0, +1, -3, +1));
-	Q = matrix_zeros(4, 4); //Q is orthogonal matrix
-	R = matrix_zeros(4, 6); //R is upper triagnle matrix
+	matrix_t *Q = matrix_zeros(4, 4); //Q is m-by-m orthogonal matrix
+	matrix_t *R = matrix_zeros(4, 6); //R is m-by-n upper triangular matrix
 
-	matrix_qr_factorization(&A, Q, R);
+	matrix_qr_factorization(&A, &Q, &R);
 
 	PRINT_MATRIX(A);
 	PRINT_MATRIX(*Q);
 	PRINT_MATRIX(*R);
+
+	matrix_delete(Q);
+	matrix_delete(R);
 }
 
 void test_solve_null_space(void)
 {
 	printf("\nsolve null space of A with QR decomposition:\n");
 
-	matrix_t A;
+	matrix_t A;  //m-by-n matrix
 	matrix_construct(&A, 4, 6, ELEMENTS(+1, +4, +0, +1, -3, +2,
 	                                    +2, +8, +1, +1, -4, +6,
 	                                    -1, -4, -1, +0, +1, -2,
 	                                    +1, +4, +0, +1, -3, +1));
-	matrix_t *At = matrix_new(6, 4);
+	matrix_t *At = matrix_new(6, 4); //n-by-m matrix
 	matrix_transpose(&A, At);
 
-	matrix_t *Q = matrix_zeros(6, 6);  //Q is orthogonal matrix
-	matrix_t *R = matrix_zeros(6, 4);  //R is upper triagnle matrix
-	matrix_qr_factorization(At, Q, R); //decompose transpose(A) using QR factorization
+	matrix_t *Q; //Q is n-n orthogonal matrix
+	matrix_t *R; //R is n-m upper triangular matrix
+	matrix_qr_factorization(At, &Q, &R); //decompose transpose(A) using QR factorization
 
 	/* test the accuracy of QR factorization */
 	matrix_t *tmp = matrix_new(6, 4);
@@ -140,6 +143,10 @@ void test_solve_null_space(void)
 	PRINT_MATRIX(*R);
 	printf("Null space of A:\n");
 	PRINT_MATRIX(*N_A);
+
+	matrix_delete(A_test);
+	matrix_delete(Q);
+	matrix_delete(R);
 }
 
 int main(void)

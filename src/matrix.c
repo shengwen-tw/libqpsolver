@@ -15,11 +15,12 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	free(pivots);
 }
 
-void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
+void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret)
 {
 	//check: https://www.netlib.org/lapack/lug/node40.html
 
-	matrix_t *Q_packed = matrix_new(A->row, A->column);
+	matrix_t *Q = matrix_new(A->row, A->row);    //m-by-m
+	matrix_t *R = matrix_new(A->row, A->column); //m-by-n
 
 	int rank;
 	if(A->row < A->column) {
@@ -34,6 +35,7 @@ void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
 	matrix_copy(R, A);
 	GEQRF(LAPACK_ROW_MAJOR, m, n, R->data, n, tau);
 
+	matrix_t *Q_packed = matrix_new(A->row, A->column);
 	matrix_copy(Q_packed, R);
 	ORGQR(LAPACK_ROW_MAJOR, m, rank, rank, Q_packed->data, n, tau);
 
@@ -52,6 +54,9 @@ void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
 		}
 		diag_start++;
 	}
+
+	*Q_ret = Q;
+	*R_ret = R;
 }
 
 void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data)
