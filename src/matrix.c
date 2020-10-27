@@ -19,6 +19,8 @@ void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
 {
 	//check: https://www.netlib.org/lapack/lug/node40.html
 
+	matrix_t *Q_packed = matrix_new(A->row, A->column);
+
 	int rank;
 	if(A->row < A->column) {
 		rank = A->row;
@@ -30,14 +32,22 @@ void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R)
 	FLOAT *tau = (FLOAT *)malloc(sizeof(FLOAT) * rank);
 
 	matrix_copy(R, A);
-	GEQRF(LAPACK_ROW_MAJOR, m, n, R->data, m, tau);
+	GEQRF(LAPACK_ROW_MAJOR, m, n, R->data, n, tau);
+
+	matrix_copy(Q_packed, R);
+	ORGQR(LAPACK_ROW_MAJOR, m, rank, rank, Q_packed->data, n, tau);
+
+	PRINT_MATRIX(*Q_packed);
 
 	//Q matrix
-	matrix_copy(Q, R);
-	ORGQR(LAPACK_ROW_MAJOR, m, n, rank, Q->data, m, tau);
-
+	int r, c;
+	for(r = 0; r < Q->row; r++) {
+		for(c = 0; c < Q->column; c++) {
+			matrix_at(Q, r, c) = matrix_at(Q_packed, r, c);
+		}
+	}
 	//R matrix
-	int r, c, diag_start = 0;
+	int diag_start = 0;
 	for(c = 0; c < n; c++) {
 		for(r = diag_start + 1; r < m; r++) {
 			matrix_at(R, r, c) = 0;
@@ -108,8 +118,8 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 void matrix_copy(matrix_t *dest, matrix_t *src)
 {
 	int r, c;
-	for(r = 0; r < dest->row; r++) {
-		for(c = 0; c < dest->column; c++) {
+	for(r = 0; r < src->row; r++) {
+		for(c = 0; c < src->column; c++) {
 			matrix_at(dest, r, c) = matrix_at(src, r, c);
 		}
 	}

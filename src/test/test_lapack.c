@@ -72,19 +72,19 @@ void test_qr_factorization(void)
 {
 	printf("\n4.solve QR factorization:\n");
 
-	matrix_t A, Q, R;
-	matrix_construct(&A, 4, 4, ELEMENTS(16,  2,  3, 13,
-	                                    5, 11, 10,  8,
-	                                    9,  7,  6, 12,
-	                                    4, 14, 15,  1));
-	matrix_construct(&Q, 4, 4, ELEMENTS(0));
-	matrix_construct(&R, 4, 4, ELEMENTS(0));
+	matrix_t A, *Q, *R;
+	matrix_construct(&A, 4, 6, ELEMENTS(+1, +4, +0, +1, -3, +2,
+	                                    +2, +8, +1, +1, -4, +6,
+	                                    -1, -4, -1, +0, +1, -2,
+	                                    +1, +4, +0, +1, -3, +1));
+	Q = matrix_zeros(4, 4); //Q is orthogonal matrix
+	R = matrix_zeros(4, 6); //R is upper triagnle matrix
 
-	matrix_qr_factorization(&A, &Q, &R);
+	matrix_qr_factorization(&A, Q, R);
 
 	PRINT_MATRIX(A);
-	PRINT_MATRIX(Q);
-	PRINT_MATRIX(R);
+	PRINT_MATRIX(*Q);
+	PRINT_MATRIX(*R);
 }
 
 int main(void)
