@@ -19,7 +19,7 @@ typedef struct {
 typedef matrix_t vector_t;
 
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
-void matrix_qr_factorization(matrix_t *A);
+void matrix_qr_factorization(matrix_t *A, matrix_t *Q, matrix_t *R);
 
 void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data);
 matrix_t* matrix_new(int r, int c);
