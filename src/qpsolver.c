@@ -555,8 +555,42 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	float div_fi = 0;
 	float div_fi_squared = 0;
 
-	int r;
+	int r, c;
 	int i, j;
+
+	/*========================================================*
+	 * eliminate equality constraints by null space transform *
+	 *========================================================*/
+	matrix_t *A_eq_t = matrix_new(qp->A_eq->column, qp->A_eq->row);
+	matrix_t *F = matrix_zeros(qp->A_eq->column, qp->A_eq->column);
+	matrix_t *Q, *R;
+
+	matrix_transpose(qp->A_eq, A_eq_t);
+	matrix_qr_factorization(A_eq_t, &Q, &R);
+
+	/* calculate the zeros row count of R matrix */
+	int n_zero_cols = 0;
+	for(r = (R->row - 1); r >= 0; r--) {
+		FLOAT norm = 0;
+		for(c = 0; c < R->column; c++) {
+			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
+		}
+
+		if(fabs(norm) < 1e-8) {
+			n_zero_cols++;
+		}
+	}
+
+	/* copy null space bias vectors from Q matrix */
+	for(r = 0; r < F->row; r++) {
+		for(c = 0; c < n_zero_cols; c++) {
+			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
+		}
+	}
+
+	//PRINT_MATRIX(*Q);
+	//PRINT_MATRIX(*R);
+	//PRINT_MATRIX(*F);
 
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
