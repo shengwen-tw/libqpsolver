@@ -917,7 +917,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				if(step_too_large == false) {
 					break;
 				} else {
-					matrix_scale_by(qp->a, scaled_newton_step);
+					matrix_scale_by(qp->a, newton_step);
 				}
 			}
 
