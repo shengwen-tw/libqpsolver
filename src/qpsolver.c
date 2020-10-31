@@ -283,7 +283,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	int i, j;
 
 	/* outer loop varies the stiffness of the log barrier functions */
-	while(1) {
+	while(qp->iters < qp->max_iters) {
 		if(t > qp->t_max_inc) {
 			break;
 		}
@@ -646,7 +646,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	 *====================*/
 
 	/* outer loop varies the stiffness of the log barrier functions */
-	while(1) {
+	while(qp->iters < qp->max_iters) {
 		if(t > (qp->t_init + qp->t_max_inc)) {
 			break;
 		}
