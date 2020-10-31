@@ -499,7 +499,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			VERBOSE_PRINT_MATRIX(*D2_f0_inv);
 			VERBOSE_PRINT_MATRIX(*newton_step);
 			VERBOSE_PRINT_MATRIX(*qp->x);
-            VERBOSE_PRINT("t = %f\n", t);
+			VERBOSE_PRINT("t = %f\n", t);
 
 			qp->iters++;
 
@@ -533,6 +533,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 {
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
+	int r;
+	int i, j;
+
 	//log barrier's parameter
 	float t = qp->t_init;
 
@@ -564,47 +567,14 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	float div_fi = 0;
 	float div_fi_squared = 0;
 
-	int r;
-	int i, j;
-
 	/*========================================================*
 	 * eliminate equality constraints by null space transform *
 	 *========================================================*/
+
 	matrix_t *A_eq_t = matrix_new(qp->A_eq->column, qp->A_eq->row);
 	matrix_t *F = matrix_zeros(qp->A_eq->column, qp->A_eq->column);
 	matrix_t *F_t = matrix_new(F->column, F->column);
 	matrix_t *Q, *R;
-
-	matrix_transpose(qp->A_eq, A_eq_t);
-	matrix_qr_factorization(A_eq_t, &Q, &R);
-
-#if 1
-	matrix_at(F, 0, 0) = -0.70711;
-	matrix_at(F, 1, 0) = +0.70711;
-#endif
-
-#if 0
-	/* calculate the zeros row count of R matrix */
-	int n_zero_cols = 0;
-	for(r = (R->row - 1); r >= 0; r--) {
-		FLOAT norm = 0;
-		for(c = 0; c < R->column; c++) {
-			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
-		}
-
-		if(fabs(norm) < 1e-8) {
-			n_zero_cols++;
-		}
-	}
-
-	/* copy null space bias vectors from Q matrix */
-	for(r = 0; r < F->row; r++) {
-		for(c = 0; c < n_zero_cols; c++) {
-			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
-		}
-	}
-#endif
-	matrix_transpose(F, F_t);
 
 	/*==============================================================================*
 	 * solve the problem with new optimization variable z in the null space of A_eq *
@@ -632,6 +602,48 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_t *D2_f_tilde_inv = matrix_new(qp->x->row, qp->x->row);
 	//D2_f0 times F
 	matrix_t *D2_f0_F = matrix_new(D2_f_tilde->row, D2_f_tilde->column);
+
+	/*=====================================*
+	 * caclulate null space matrix of A_eq *
+	 *=====================================*/
+
+	matrix_transpose(qp->A_eq, A_eq_t);
+	matrix_qr_factorization(A_eq_t, &Q, &R);
+
+    //FIXME
+#if 1
+	matrix_at(F, 0, 0) = -0.70711;
+	matrix_at(F, 1, 0) = +0.70711;
+#endif
+
+    //FIXME
+#if 0
+	/* calculate the zeros row count of R matrix */
+	int n_zero_cols = 0;
+	for(r = (R->row - 1); r >= 0; r--) {
+		FLOAT norm = 0;
+		for(c = 0; c < R->column; c++) {
+			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
+		}
+
+		if(fabs(norm) < 1e-8) {
+			n_zero_cols++;
+		}
+	}
+
+	/* copy null space bias vectors from Q matrix */
+	for(r = 0; r < F->row; r++) {
+		for(c = 0; c < n_zero_cols; c++) {
+			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
+		}
+	}
+#endif
+
+	matrix_transpose(F, F_t);
+
+	/*====================*
+	 * optimization start *
+	 *====================*/
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(1) {
@@ -935,7 +947,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			VERBOSE_PRINT_MATRIX(*newton_step);
 			VERBOSE_PRINT_MATRIX(*z_now);
 			VERBOSE_PRINT_MATRIX(*x_now);
-            VERBOSE_PRINT("t = %f\n", t);
+			VERBOSE_PRINT("t = %f\n", t);
 
 			qp->iters++;
 
