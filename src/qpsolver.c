@@ -22,7 +22,7 @@ void qp_set_default(qp_t *qp)
 	qp->a = 0.95;          //line searching parameter of the newton step
 	qp->mu = 20;           //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial stiffness of the log barrier
-	qp->t_max = 100;       //maximum stiffness of the log barrier
+	qp->t_max_inc = 100;       //maximum stiffness of the log barrier
 	qp->max_iters = 1000;  //maximum iteration times
 
 	qp->line_search_num = 100;
@@ -284,7 +284,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(1) {
-		if(t > qp->t_max) {
+		if(t > qp->t_max_inc) {
 			break;
 		}
 
@@ -499,6 +499,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			VERBOSE_PRINT_MATRIX(*D2_f0_inv);
 			VERBOSE_PRINT_MATRIX(*newton_step);
 			VERBOSE_PRINT_MATRIX(*qp->x);
+            VERBOSE_PRINT("t = %f\n", t);
 
 			qp->iters++;
 
@@ -634,7 +635,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(1) {
-		if(t > qp->t_max) {
+		if(t > (qp->t_init + qp->t_max_inc)) {
 			break;
 		}
 
@@ -934,6 +935,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			VERBOSE_PRINT_MATRIX(*newton_step);
 			VERBOSE_PRINT_MATRIX(*z_now);
 			VERBOSE_PRINT_MATRIX(*x_now);
+            VERBOSE_PRINT("t = %f\n", t);
 
 			qp->iters++;
 
