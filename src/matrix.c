@@ -181,7 +181,17 @@ void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
 	}
 }
 
-void matrix_scaling(float scaler, matrix_t *mat)
+void matrix_scaling(float scaler, matrix_t *in, matrix_t *out)
+{
+	int r, c;
+	for(r = 0; r < out->row; r++) {
+		for(c = 0; c < out->column; c++) {
+			matrix_at(out, r, c) = scaler * matrix_at(in, r, c);
+		}
+	}
+}
+
+void matrix_scale_by(float scaler, matrix_t *mat)
 {
 	int r, c;
 	for(r = 0; r < mat->row; r++) {

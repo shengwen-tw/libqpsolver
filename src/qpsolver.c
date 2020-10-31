@@ -19,10 +19,13 @@ void qp_set_default(qp_t *qp)
 	qp->iters = 0;
 
 	qp->eps = 1e-6;        //residual value to stop the optimization
-	qp->a = 0.95;           //line searching parameter of the newton step
-	qp->mu = 3.5;          //stiffness growth rate of the log barrier function
+	qp->a = 1;//0.95;           //line searching parameter of the newton step
+	qp->mu = 1;//3.5;          //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial value of log barrier stiffness
-	qp->max_iters = 10000;    //maximum iteration times
+	qp->max_iters = 1000;    //maximum iteration times
+
+	qp->line_search_num = 100;
+	qp->line_search_min_step_size = 0.1;
 }
 
 bool qp_start_point_feasibility_check(qp_t *qp)
@@ -396,14 +399,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 		matrix_multiply(qp->P, qp->x, D1_f0);
 		matrix_add_by(D1_f0, qp->q);
-		matrix_scaling(t, D1_f0);
+		matrix_scale_by(t, D1_f0);
 
 		/*=========================================================*
 		 * calculate the second derivate of the objective function *
 		 *=========================================================*/
 
 		matrix_copy(D2_f0, qp->P);
-		matrix_scaling(t, D2_f0);
+		matrix_scale_by(t, D2_f0);
 
 		/*=====================================================================*
 		 * combine derivatives of objective function and log barrier functions *
@@ -419,7 +422,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 		//calculate the newton step
 		matrix_inverse(D2_f0, D2_f0_inv);
 		matrix_multiply(D2_f0_inv, D1_f0, newton_step);
-		matrix_scaling(-1, newton_step);
+		matrix_scale_by(-1, newton_step);
 
 		bool step_too_large;
 		while(1) {
@@ -480,7 +483,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			if(step_too_large == false) {
 				break;
 			} else {
-				matrix_scaling(qp->a, newton_step);
+				matrix_scale_by(qp->a, newton_step);
 			}
 		}
 
@@ -528,8 +531,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the objective function
 	matrix_t *D2_f0 = matrix_new(qp->P->row, qp->P->column);
-	//inverted second derivative of the objective function
-	matrix_t *D2_f0_inv = matrix_new(qp->x->row, qp->x->row);
 
 	//first derivative of the i-th inequality constraint function
 	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
@@ -545,6 +546,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	//newton step's vector
 	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
+
+	//newton step times step size
+	vector_t *scaled_newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	float fi = 0;
@@ -565,6 +569,12 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_transpose(qp->A_eq, A_eq_t);
 	matrix_qr_factorization(A_eq_t, &Q, &R);
 
+#if 1
+	matrix_at(F, 0, 0) = -0.70711;
+	matrix_at(F, 1, 0) = +0.70711;
+#endif
+
+#if 0
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
 	for(r = (R->row - 1); r >= 0; r--) {
@@ -584,43 +594,48 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
 		}
 	}
-
+#endif
 	matrix_transpose(F, F_t);
-
-	VERBOSE_PRINT_MATRIX(*Q);
-	VERBOSE_PRINT_MATRIX(*R);
-	VERBOSE_PRINT_MATRIX(*F);
-	VERBOSE_PRINT_MATRIX(*F_t);
 
 	/*==============================================================================*
 	 * solve the problem with new optimization variable z in the null space of A_eq *
 	 *==============================================================================*/
-	matrix_t *z = matrix_zeros(qp->x->row, qp->x->column);
-	matrix_t *z_last = matrix_zeros(qp->x->row, qp->x->column);
-	matrix_t *x_hat = matrix_zeros(qp->x->row, qp->x->column);
-	matrix_t *Fz_plus_x = matrix_new(qp->x->row, qp->x->column);
 
-	matrix_copy(Fz_plus_x, qp->x);
-	matrix_copy(z, qp->x);
+	matrix_t *x_hat = matrix_zeros(qp->x->row, qp->x->column);
+
+	//new optimization variable z
+	matrix_t *z_now = matrix_zeros(qp->x->row, qp->x->column);
+	matrix_t *z_last = matrix_zeros(qp->x->row, qp->x->column);
+
+	//x = Fx + x_hat
+	matrix_t *x_now = matrix_zeros(qp->x->row, qp->x->column);
+	matrix_t *x_last = matrix_zeros(qp->x->row, qp->x->column);
+
+	//initialize x with z
+	matrix_multiply(F, z_now, x_now);
+	matrix_add_by(x_now, x_hat);
+
+	//first derivative of the equality constraints eliminated objective function
+	matrix_t *D1_f_tilde = matrix_new(qp->x->row, qp->x->column);
+	//second derivative of the equality constraints eliminated objective function
+	matrix_t *D2_f_tilde = matrix_new(qp->P->row, qp->P->column);
+	//inverted second derivative of the equality constraints eliminated objective function
+	matrix_t *D2_f_tilde_inv = matrix_new(qp->x->row, qp->x->row);
+	//D2_f0 times F
+	matrix_t *D2_f0_F = matrix_new(D2_f_tilde->row, D2_f_tilde->column);
 
 	while(qp->iters < qp->max_iters) {
 		VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
 
-		/* preseve last x for checking convergence */
-		matrix_copy(z_last, z);
+		/* preseve last x and z variable */
+		matrix_copy(z_last, z_now);
+		matrix_copy(x_last, x_now);
 
 		/* increase the stiffness of the log barrier functions */
 		t *= qp->mu;
 
 		matrix_reset_zeros(D1_phi);
 		matrix_reset_zeros(D2_phi);
-
-		/*=====================================================================*
-		 * calculate Fz + x_bar                                                *
-		 * which is the optimization variable obey to the equality constraints *
-		 *=====================================================================*/
-		//matrix_multiply(F, z, Fz_plus_x);
-		//matrix_add_by(Fz_plus_x, x_hat);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 		/*===================================================================*
@@ -629,7 +644,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 		if(solve_lower_bound == true) {
 			for(r = 0; r < qp->lb->row; r++) {
-				fi = -matrix_at(Fz_plus_x, r, 0) + matrix_at(qp->lb, r, 0);
+				fi = -matrix_at(x_now, r, 0) + matrix_at(qp->lb, r, 0);
 				div_fi = 1 / (fi + epsilon);
 				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
@@ -660,7 +675,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 		if(solve_upper_bound == true) {
 			for(r = 0; r < qp->ub->row; r++) {
-				fi = matrix_at(Fz_plus_x, r, 0) -  matrix_at(qp->ub, r, 0);
+				fi = matrix_at(x_now, r, 0) -  matrix_at(qp->ub, r, 0);
 				div_fi = -1 / (fi + epsilon);
 				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
@@ -694,7 +709,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				/* calculate constraint function value */
 				fi = 0;
 				for(j = 0; j < qp->A->column; j++) {
-					fi += matrix_at(qp->A, r, j) * matrix_at(Fz_plus_x, j, 0);
+					fi += matrix_at(qp->A, r, j) * matrix_at(x_now, j, 0);
 				}
 				fi -= matrix_at(qp->b, r, 0);
 				div_fi = -1 / (fi + epsilon);
@@ -726,16 +741,16 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		 * calculate the firt derivative of the objective function *
 		 *=========================================================*/
 
-		matrix_multiply(qp->P, Fz_plus_x, D1_f0);
+		matrix_multiply(qp->P, x_now, D1_f0);
 		matrix_add_by(D1_f0, qp->q);
-		matrix_scaling(t, D1_f0);
+		matrix_scale_by(t, D1_f0);
 
 		/*=========================================================*
 		 * calculate the second derivate of the objective function *
 		 *=========================================================*/
 
 		matrix_copy(D2_f0, qp->P);
-		matrix_scaling(t, D2_f0);
+		matrix_scale_by(t, D2_f0);
 
 		/*=====================================================================*
 		 * combine derivatives of objective function and log barrier functions *
@@ -744,32 +759,105 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		matrix_add_by(D1_f0, D1_phi);
 		matrix_add_by(D2_f0, D2_phi);
 
+		/*=====================================================================*
+		 * multiply first and second derivatives of objective function bu null *
+		 * matrix F                                                            *
+		 *=====================================================================*/
+
+		//first derivative
+		matrix_multiply(F_t, D1_f0, D1_f_tilde);
+
+		//second derivative
+		matrix_multiply(D2_f0, F, D2_f0_F);
+		matrix_multiply(F_t, D2_f0_F, D2_f_tilde);
+
 		/*===================================*
 		 * gradient descent with newton step *
 		 *===================================*/
 
 		//calculate the newton step
-		matrix_inverse(D2_f0, D2_f0_inv);
-		matrix_multiply(D2_f0_inv, D1_f0, newton_step);
-		matrix_scaling(-1, newton_step);
+		matrix_inverse(D2_f_tilde, D2_f_tilde_inv);
+		matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step);
+		matrix_scale_by(-1, newton_step);
 
+		/* exact line search */
+		float curr_step_size;
+		float best_step_size = qp->line_search_num;
+		float curr_norm = 0;
+		float smallest_norm = 0;
+
+		/* initial the step size */
+		matrix_add(z_last, newton_step, z_now); //scale = 1
+		matrix_multiply(F, z_now, x_now);
+		matrix_add_by(x_now, x_hat);
+		matrix_multiply(qp->P, x_now, D1_f0);
+		matrix_add_by(D1_f0, qp->q);
+		matrix_scale_by(t, D1_f0);
+		for(r = 0; r < D1_f0->row; r++) {
+			smallest_norm += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
+		}
+
+		/* find the best step size iteratively */
+		for(i = (qp->line_search_num - 1); i > 0; i--) {
+			curr_step_size = (float)i / (float)qp->line_search_num;
+
+			if(curr_step_size <= qp->line_search_min_step_size) {
+				break;
+			}
+
+			matrix_scaling(curr_step_size, newton_step, scaled_newton_step);
+			matrix_add(z_last, scaled_newton_step, z_now);
+
+			//calculate x from z
+			matrix_multiply(F, z_now, x_now);
+			matrix_add_by(x_now, x_hat);
+
+			//calculate the first derivative
+			matrix_multiply(qp->P, x_now, D1_f0);
+			matrix_add_by(D1_f0, qp->q);
+			matrix_scale_by(t, D1_f0);
+
+			//calculate squared norm of the first derivative
+			curr_norm = 0;
+			for(r = 0; r < D1_f0->row; r++) {
+				curr_norm += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
+			}
+
+			//VERBOSE_PRINT("[exact line search] #%d: norm = %f, step_size = %f\n",
+			//              i, curr_norm, curr_step_size);
+
+			//update best step size so far
+			if(curr_norm < smallest_norm) {
+				smallest_norm = curr_norm;
+				best_step_size = curr_step_size;
+
+				//VERBOSE_PRINT("[exact line search]current best: #%d, step size: %f\n",
+				//              i, best_step_size);
+			}
+		}
+		//VERBOSE_PRINT("[exact line search] best step size: %f\n", best_step_size);
+
+		/* make sure newton step won't exceed the inequality bounds */
 		bool step_too_large;
 		while(1) {
 			step_too_large = false;
 
 			/* update the optimization variable */
-			for(r = 0; r < z->row; r++) {
-				matrix_add(z_last, newton_step, z);
+			for(r = 0; r < z_now->row; r++) {
+				//update z with newton step
+				matrix_scaling(best_step_size, newton_step, scaled_newton_step);
+				matrix_add(z_last, scaled_newton_step, z_now);
 
-				//FIXME
-				matrix_copy(Fz_plus_x, z);
+				//calculate x from z
+				matrix_multiply(F, z_now, x_now);
+				matrix_add_by(x_now, x_hat);
 
 #if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
 				/*==================================================*
 				 * check if lower bound constraints are still valid *
 				 *==================================================*/
 				if(solve_lower_bound == true) {
-					if(matrix_at(Fz_plus_x, r, 0) < matrix_at(qp->lb, r, 0)) {
+					if(matrix_at(x_now, r, 0) < matrix_at(qp->lb, r, 0)) {
 						step_too_large = true;
 						break;
 					}
@@ -781,7 +869,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				 * check if upper bound constraints are still valid *
 				 *==================================================*/
 				if(solve_upper_bound == true) {
-					if(matrix_at(Fz_plus_x, r, 0) > matrix_at(qp->ub, r, 0)) {
+					if(matrix_at(x_now, r, 0) > matrix_at(qp->ub, r, 0)) {
 						step_too_large = true;
 						break;
 					}
@@ -797,7 +885,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				for(i = 0; i < qp->A->row; i++) {
 					fi = 0;
 					for(j = 0; j < qp->A->column; j++) {
-						fi += matrix_at(qp->A, i, j) * matrix_at(Fz_plus_x, j, 0);
+						fi += matrix_at(qp->A, i, j) * matrix_at(x_now, j, 0);
 					}
 
 					if(fi > matrix_at(qp->b, i, 0)) {
@@ -815,34 +903,41 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			if(step_too_large == false) {
 				break;
 			} else {
-				matrix_scaling(qp->a, newton_step);
+				matrix_scale_by(qp->a, scaled_newton_step);
 			}
 		}
 
-		VERBOSE_PRINT_MATRIX(*D1_phi);
-		VERBOSE_PRINT_MATRIX(*D2_phi);
+		VERBOSE_PRINT_MATRIX(*Q);
+		VERBOSE_PRINT_MATRIX(*R);
+		VERBOSE_PRINT_MATRIX(*F);
+		VERBOSE_PRINT_MATRIX(*F_t);
+		VERBOSE_PRINT_MATRIX(*x_hat);
 		VERBOSE_PRINT_MATRIX(*D1_f0);
 		VERBOSE_PRINT_MATRIX(*D2_f0);
-		VERBOSE_PRINT_MATRIX(*D2_f0_inv);
+		VERBOSE_PRINT_MATRIX(*D1_phi);
+		VERBOSE_PRINT_MATRIX(*D2_phi);
+		VERBOSE_PRINT_MATRIX(*D1_f_tilde);
+		VERBOSE_PRINT_MATRIX(*D2_f_tilde);
+		VERBOSE_PRINT_MATRIX(*D2_f_tilde_inv);
 		VERBOSE_PRINT_MATRIX(*newton_step);
-		VERBOSE_PRINT_MATRIX(*Fz_plus_x);
+		VERBOSE_PRINT_MATRIX(*z_now);
+		VERBOSE_PRINT_MATRIX(*x_now);
 
 		qp->iters++;
 
-		FLOAT resid = vector_residual(z, z_last);
+		FLOAT resid = vector_residual(x_now, x_last);
 		VERBOSE_PRINT("residual: %f\n", resid);
 		VERBOSE_PRINT("---\n");
 
 		/* exit if already converged */
-		if(resid < qp->eps) {
-			matrix_copy(qp->x, Fz_plus_x);
+		if(resid < qp->eps || qp->iters == qp->max_iters) {
+			matrix_copy(qp->x, x_now);
 			break;
 		}
 	}
 
 	matrix_delete(D1_f0);
 	matrix_delete(D2_f0);
-	matrix_delete(D2_f0_inv);
 	matrix_delete(D1_fi);
 	matrix_delete(D1_fi_t);
 	matrix_delete(D1_fi_D1_fi_t);
