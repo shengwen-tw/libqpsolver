@@ -181,7 +181,7 @@ void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
 	}
 }
 
-void matrix_scaling(float scaler, matrix_t *in, matrix_t *out)
+void matrix_scaling(FLOAT scaler, matrix_t *in, matrix_t *out)
 {
 	int r, c;
 	for(r = 0; r < out->row; r++) {
@@ -191,7 +191,7 @@ void matrix_scaling(float scaler, matrix_t *in, matrix_t *out)
 	}
 }
 
-void matrix_scale_by(float scaler, matrix_t *mat)
+void matrix_scale_by(FLOAT scaler, matrix_t *mat)
 {
 	int r, c;
 	for(r = 0; r < mat->row; r++) {
@@ -201,10 +201,10 @@ void matrix_scale_by(float scaler, matrix_t *mat)
 	}
 }
 
-float vector_residual(vector_t *vec1, vector_t *vec2)
+FLOAT vector_residual(vector_t *vec1, vector_t *vec2)
 {
-	float sum_of_squared = 0;
-	float diff;
+	FLOAT sum_of_squared = 0;
+	FLOAT diff;
 
 	int r;
 	for(r = 0; r < vec1->row; r++) {

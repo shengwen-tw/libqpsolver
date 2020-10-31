@@ -31,13 +31,13 @@ void qp_set_default(qp_t *qp)
 
 bool qp_start_point_feasibility_check(qp_t *qp)
 {
-	float fi;
+	FLOAT fi;
 	int r, c;
 
 	/* equality constraints */
 	if((qp->A_eq != NULL) && (qp->b_eq != NULL)) {
 		bool infeasible = false;
-		const float tolerance = 1e-3;
+		const FLOAT tolerance = 1e-3;
 
 		vector_t *Ax = matrix_new(qp->b_eq->row, qp->b_eq->column);
 		vector_t *lin_sys_sol = matrix_new(qp->b_eq->row, qp->b_eq->column);
@@ -246,7 +246,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	//log barrier's parameter
-	float t = qp->t_init;
+	FLOAT t = qp->t_init;
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
@@ -275,9 +275,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	float fi = 0;
-	float div_fi = 0;
-	float div_fi_squared = 0;
+	FLOAT fi = 0;
+	FLOAT div_fi = 0;
+	FLOAT div_fi_squared = 0;
 
 	int r;
 	int i, j;
@@ -537,7 +537,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	int i, j;
 
 	//log barrier's parameter
-	float t = qp->t_init;
+	FLOAT t = qp->t_init;
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
@@ -563,9 +563,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	vector_t *scaled_newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	float fi = 0;
-	float div_fi = 0;
-	float div_fi_squared = 0;
+	FLOAT fi = 0;
+	FLOAT div_fi = 0;
+	FLOAT div_fi_squared = 0;
 
 	/*========================================================*
 	 * eliminate equality constraints by null space transform *
@@ -806,10 +806,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_scale_by(-1, newton_step);
 
 			/* exact line search */
-			float curr_step_size;
-			float best_step_size = qp->line_search_num;
-			float curr_norm = 0;
-			float smallest_norm = 0;
+			FLOAT curr_step_size;
+			FLOAT best_step_size = qp->line_search_num;
+			FLOAT curr_norm = 0;
+			FLOAT smallest_norm = 0;
 
 			/* initial the step size */
 			matrix_add(z_last, newton_step, z_now); //scale = 1
@@ -824,7 +824,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			/* find the best step size iteratively */
 			for(i = (qp->line_search_num - 1); i > 0; i--) {
-				curr_step_size = (float)i / (float)qp->line_search_num;
+				curr_step_size = (FLOAT)i / (FLOAT)qp->line_search_num;
 
 				if(curr_step_size <= qp->line_search_min_step_size) {
 					break;
