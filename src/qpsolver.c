@@ -617,7 +617,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		}
 	}
 	matrix_qr_factorization(A_eq_square, &Q, &R);
-	PRINT_MATRIX(*A_eq_square);
 
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
