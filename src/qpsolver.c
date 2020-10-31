@@ -22,8 +22,8 @@ void qp_set_default(qp_t *qp)
 	qp->a = 0.95;          //line searching parameter of the newton step
 	qp->mu = 20;           //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial stiffness of the log barrier
-	qp->t_max_inc = 10000;       //maximum stiffness of the log barrier
-	qp->max_iters = 1;  //maximum iteration times
+	qp->t_max_inc = 100;   //maximum stiffness of the log barrier
+	qp->max_iters = 50;    //maximum iteration times
 
 	qp->line_search_num = 100;
 	qp->line_search_min_step_size = 0.1;
