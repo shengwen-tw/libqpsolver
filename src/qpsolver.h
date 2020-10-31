@@ -43,11 +43,12 @@ typedef struct {
 	FLOAT eps;
 	FLOAT a;
 	FLOAT t_init;
+	FLOAT t_max;
 	FLOAT mu;
 	int max_iters;
 	int iters;
 	int line_search_num;
-	float line_search_min_step_size;
+	FLOAT line_search_min_step_size;
 } qp_t;
 
 void qp_set_default(qp_t *qp);
