@@ -284,8 +284,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(1) {
-		t += qp->mu;
-
 		if(t > qp->t_max) {
 			break;
 		}
@@ -513,6 +511,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 				break;
 			}
 		}
+
+		t += qp->mu;
 	}
 
 	matrix_delete(x_last);
@@ -634,8 +634,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(1) {
-		t += qp->mu;
-
 		if(t > qp->t_max) {
 			break;
 		}
@@ -949,6 +947,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				break;
 			}
 		}
+
+		t += qp->mu;
 	}
 
 	matrix_delete(D1_f0);
