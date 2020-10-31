@@ -22,8 +22,8 @@ void qp_set_default(qp_t *qp)
 	qp->a = 0.95;          //line searching parameter of the newton step
 	qp->mu = 20;           //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial stiffness of the log barrier
-	qp->t_max_inc = 100;       //maximum stiffness of the log barrier
-	qp->max_iters = 1000;  //maximum iteration times
+	qp->t_max_inc = 10000;       //maximum stiffness of the log barrier
+	qp->max_iters = 1;  //maximum iteration times
 
 	qp->line_search_num = 100;
 	qp->line_search_min_step_size = 0.1;
@@ -533,7 +533,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 {
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
-	int r;
+	int r, c;
 	int i, j;
 
 	//log barrier's parameter
@@ -571,7 +571,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	 * eliminate equality constraints by null space transform *
 	 *========================================================*/
 
-	matrix_t *A_eq_t = matrix_new(qp->A_eq->column, qp->A_eq->row);
 	matrix_t *F = matrix_zeros(qp->A_eq->column, qp->A_eq->column);
 	matrix_t *F_t = matrix_new(F->column, F->column);
 	matrix_t *Q, *R;
@@ -607,17 +606,19 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	 * caclulate null space matrix of A_eq *
 	 *=====================================*/
 
-	matrix_transpose(qp->A_eq, A_eq_t);
-	matrix_qr_factorization(A_eq_t, &Q, &R);
+	/* if user input a rectangular A_eq matrix, fill up zeros to make it
+	 * become a square matrix (required by QR factorization in Lapack) */
+	matrix_t *A_eq_square = matrix_zeros(qp->x->row, qp->x->row);
+	for(r = 0; r < qp->A_eq->row; r++) {
+		for(c = 0; c < qp->A_eq->column; c++) {
+			/* combine copy and tranpose in one line,
+			 * transpose is for calculating the null space of A_eq */
+			matrix_at(A_eq_square, c, r) = matrix_at(qp->A_eq, r, c);
+		}
+	}
+	matrix_qr_factorization(A_eq_square, &Q, &R);
+	PRINT_MATRIX(*A_eq_square);
 
-    //FIXME
-#if 1
-	matrix_at(F, 0, 0) = -0.70711;
-	matrix_at(F, 1, 0) = +0.70711;
-#endif
-
-    //FIXME
-#if 0
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
 	for(r = (R->row - 1); r >= 0; r--) {
@@ -637,7 +638,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
 		}
 	}
-#endif
 
 	matrix_transpose(F, F_t);
 
