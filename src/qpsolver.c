@@ -23,7 +23,7 @@ void qp_set_default(qp_t *qp)
 	qp->mu = 20;           //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial stiffness of the log barrier
 	qp->t_max_inc = 100;   //maximum stiffness of the log barrier
-	qp->max_iters = 50;    //maximum iteration times
+	qp->max_iters = 1000;    //maximum iteration times
 
 	qp->line_search_num = 100;
 	qp->line_search_min_step_size = 0.1;
@@ -782,21 +782,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			}
 #endif
 
-			/*=========================================================*
-			 * calculate the firt derivative of the objective function *
-			 *=========================================================*/
-
-			matrix_multiply(qp->P, x_now, D1_f0);
-			matrix_add_by(D1_f0, qp->q);
-			matrix_scale_by(t, D1_f0);
-
-			/*=========================================================*
-			 * calculate the second derivate of the objective function *
-			 *=========================================================*/
-
-			matrix_copy(D2_f0, qp->P);
-			matrix_scale_by(t, D2_f0);
-
 			/*====================================================*
 			 * calculate newton step of the log barrier functions *
 			 *====================================================*/
@@ -815,25 +800,29 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			//exact line search
 			//FIXME
-			matrix_scaling(0.025, newton_step_barrier, scaled_newton_step_barrier);
+			matrix_scaling(0.1, newton_step_barrier, scaled_newton_step_barrier);
 
-			/*=====================================================================*
-			 * multiply first and second derivatives of objective function bu null *
-			 * matrix F                                                            *
-			 *=====================================================================*/
+			/*==================================================*
+			 * calculate newton step of the objective functions *
+			 *==================================================*/
 
-			//first derivative
+			//first derivative of the objective function
+			matrix_multiply(qp->P, x_now, D1_f0);
+			matrix_add_by(D1_f0, qp->q);
+			matrix_scale_by(t, D1_f0);
+
+			//second derivative of the objective function
+			matrix_copy(D2_f0, qp->P);
+			matrix_scale_by(t, D2_f0);
+
+			//null space transform of the first derivative
 			matrix_multiply(F_t, D1_f0, D1_f_tilde);
 
-			//second derivative
+			//null space transform of the second derivative
 			matrix_multiply(D2_f0, F, D2_f0_F);
 			matrix_multiply(F_t, D2_f0_F, D2_f_tilde);
 
-			/*===================================*
-			 * gradient descent with newton step *
-			 *===================================*/
-
-			//calculate newton step of the object function
+			//calculate newton step
 			matrix_inverse(D2_f_tilde, D2_f_tilde_inv);
 			matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step_obj);
 			matrix_scale_by(-1, newton_step_obj);
@@ -963,6 +952,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 					break;
 				} else {
 					matrix_scale_by(qp->a, newton_step_obj);
+
+					PRINT_MATRIX(*x_now);
+					PRINT_MATRIX(*newton_step_obj);
+					PRINT_MATRIX(*scaled_newton_step_barrier);
 				}
 			}
 
