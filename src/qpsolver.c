@@ -615,10 +615,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	}
 	matrix_qr_factorization(A_eq_square, &Q, &R);
 
-	matrix_at(F, 0, 0) = -0.70711;
-	matrix_at(F, 1, 0) = 0.70711;
-
-#if 0
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
 	for(r = (R->row - 1); r >= 0; r--) {
@@ -638,7 +634,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
 		}
 	}
-#endif
+
 	matrix_transpose(F, F_t);
 
 	/*====================*
@@ -663,8 +659,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_reset_zeros(D2_phi);
 
 			/*=======================================================*
-					 * calculate first and second derivative of log barriers *
-					 *=======================================================*/
+			 * calculate first and second derivative of log barriers *
+			 *=======================================================*/
 
 			for(r = 0; r < A_inequality->row; r++) {
 				/* calculate value of the log barrier function */
@@ -744,7 +740,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			FLOAT curr_step_size;
 			FLOAT best_step_size = qp->line_search_num;
 			FLOAT curr_norm = 0;
-			FLOAT smallest_norm = 0;
+			FLOAT best_cost = 0;
 
 			/* initialize the step size */
 			matrix_add(z_last, newton_step_obj, z_now); //scale = 1
@@ -754,7 +750,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_add_by(D1_f0, qp->q);
 			matrix_scale_by(t, D1_f0);
 			for(r = 0; r < D1_f0->row; r++) {
-				smallest_norm += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
+				best_cost += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
 			}
 
 			/* find the best step size iteratively */
@@ -787,8 +783,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				//              i, curr_norm, curr_step_size);
 
 				//update best step size so far
-				if(curr_norm < smallest_norm) {
-					smallest_norm = curr_norm;
+				if(curr_norm < best_cost) {
+					best_cost = curr_norm;
 					best_step_size = curr_step_size;
 
 					//VERBOSE_PRINT("[exact line search]current best: #%d, step size: %f\n",
