@@ -283,29 +283,41 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	FLOAT div_fi_squared = 0;
 
 	/* inequality constraint matrix (lower bound + upper bound + affine inequality) */
-	int A_inequality_row = qp->lb->row + qp->ub->row + qp->A->row;
+	int lb_size = (solve_lower_bound == true) ? qp->lb->row : 0;
+	int ub_size = (solve_upper_bound == true) ? qp->ub->row : 0;
+	int b_size = (solve_affine_inequality == true) ? qp->b->row : 0;
+
+	int A_inequality_row = lb_size + ub_size + b_size;
 	int A_inequality_column = qp->x->row;
 	matrix_t *A_inequality = matrix_zeros(A_inequality_row, A_inequality_column);
 
-	int b_inequality_row = qp->lb->row + qp->ub->row + qp->A->row;
+	int b_inequality_row = lb_size + ub_size + b_size;
 	int b_inequality_column = 1;
 	matrix_t *b_inequality = matrix_new(b_inequality_row, b_inequality_column);
 
-	for(r = 0; r < qp->lb->row; r++) {
-		matrix_at(A_inequality, r, r) = -1;
-		matrix_at(b_inequality, r, 0) = -matrix_at(qp->lb, r, 0);
-	}
-	for(r = 0; r < qp->ub->row; r++) {
-		matrix_at(A_inequality, r + qp->lb->row, r) = 1;
-		matrix_at(b_inequality, r + qp->lb->row, 0) = matrix_at(qp->ub, r, 0);
-	}
-	for(r = 0; r < qp->A->row; r++) {
-		for(c = 0; c < qp->A->column; c++) {
-			matrix_at(A_inequality, r + qp->lb->row + qp->ub->row, c) =
-			    matrix_at(qp->A, r, c);
+	if(solve_lower_bound == true) {
+		for(r = 0; r < qp->lb->row; r++) {
+			matrix_at(A_inequality, r, r) = -1;
+			matrix_at(b_inequality, r, 0) = -matrix_at(qp->lb, r, 0);
 		}
-		matrix_at(b_inequality, r + qp->lb->row + qp->ub->row, 0) =
-		    matrix_at(qp->b, r, 0);
+	}
+
+	if(solve_upper_bound == true) {
+		for(r = 0; r < qp->ub->row; r++) {
+			matrix_at(A_inequality, r + lb_size, r) = 1;
+			matrix_at(b_inequality, r + lb_size, 0) = matrix_at(qp->ub, r, 0);
+		}
+	}
+
+	if(solve_affine_inequality == true) {
+		for(r = 0; r < qp->A->row; r++) {
+			for(c = 0; c < qp->A->column; c++) {
+				matrix_at(A_inequality, r + lb_size + ub_size, c) =
+				    matrix_at(qp->A, r, c);
+			}
+			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
+			    matrix_at(qp->b, r, 0);
+		}
 	}
 
 	VERBOSE_PRINT_MATRIX(*A_inequality);
