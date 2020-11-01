@@ -23,7 +23,7 @@ void qp_set_default(qp_t *qp)
 	qp->mu = 20;           //stiffness growth rate of the log barrier function
 	qp->t_init = 1;        //initial stiffness of the log barrier
 	qp->t_max_inc = 100;   //maximum stiffness of the log barrier
-	qp->max_iters = 100;    //maximum iteration times
+	qp->max_iters = 50;    //maximum iteration times
 
 	qp->line_search_num = 100;
 	qp->line_search_min_step_size = 0.1;
@@ -92,6 +92,64 @@ bool qp_start_point_feasibility_check(qp_t *qp)
 	}
 
 	return true;
+}
+
+float calc_objective_func_val(FLOAT t, qp_t *qp)
+{
+	FLOAT f = 0;
+
+	/* calculate transpose(x) * P * x */
+	matrix_t *xPx = matrix_new(1, 1);
+	matrix_t *Px = matrix_new(qp->x->row, qp->x->column);
+	matrix_t *xt = matrix_new(qp->x->column, qp->x->row);
+	matrix_transpose(qp->x, xt);
+	matrix_multiply(qp->P, qp->x, Px);
+	matrix_multiply(xt, Px, xPx);
+
+	/* calculate tranpose(q) * r */
+	matrix_t *qt_x = matrix_new(1, 1);
+	matrix_t *qt = matrix_new(qp->q->column, qp->q->row);
+	matrix_transpose(qp->q, qt);
+	matrix_multiply(qt, qp->x, qt_x);
+
+	f = matrix_at(xPx, 0, 0) + matrix_at(qt_x, 0, 0);
+
+	matrix_delete(xPx);
+	matrix_delete(Px);
+	matrix_delete(xt);
+	matrix_delete(qt_x);
+	matrix_delete(qt);
+
+	return t * f;
+}
+
+float calc_log_barrier_objective_func_val(FLOAT t, qp_t *qp, matrix_t *A_inequality)
+{
+	FLOAT f = 0, sum_phi = 0;
+
+	/* calculate transpose(x) * P * x */
+	matrix_t *xPx = matrix_new(1, 1);
+	matrix_t *Px = matrix_new(qp->x->row, qp->x->column);
+	matrix_t *xt = matrix_new(qp->x->column, qp->x->row);
+	matrix_transpose(qp->x, xt);
+	matrix_multiply(qp->P, qp->x, Px);
+	matrix_multiply(xt, Px, xPx);
+
+	/* calculate tranpose(q) * r */
+	matrix_t *qt_x = matrix_new(1, 1);
+	matrix_t *qt = matrix_new(qp->q->column, qp->q->row);
+	matrix_transpose(qp->q, qt);
+	matrix_multiply(qt, qp->x, qt_x);
+
+	f = matrix_at(xPx, 0, 0) + matrix_at(qt_x, 0, 0);
+
+	matrix_delete(xPx);
+	matrix_delete(Px);
+	matrix_delete(xt);
+	matrix_delete(qt_x);
+	matrix_delete(qt);
+
+	return t * f + sum_phi;
 }
 
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
@@ -471,6 +529,11 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
+	//FIXME
+	solve_lower_bound = false;
+	solve_upper_bound = false;
+	solve_affine_inequality = false;
+
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
@@ -574,12 +637,11 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_t *z_last = matrix_zeros(qp->x->row, qp->x->column);
 
 	//x = Fx + x_hat
-	matrix_t *x_now = matrix_zeros(qp->x->row, qp->x->column);
 	matrix_t *x_last = matrix_zeros(qp->x->row, qp->x->column);
 
 	//initialize x with z
-	matrix_multiply(F, z_now, x_now);
-	matrix_add_by(x_now, x_hat);
+	matrix_multiply(F, z_now, qp->x);
+	matrix_add_by(qp->x, x_hat);
 
 	//first derivative of the equality constraints eliminated objective function
 	matrix_t *D1_f_tilde = matrix_new(qp->x->row, qp->x->column);
@@ -653,7 +715,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			/* preseve last x and z variable */
 			matrix_copy(z_last, z_now);
-			matrix_copy(x_last, x_now);
+			matrix_copy(x_last, qp->x);
 
 			matrix_reset_zeros(D1_phi);
 			matrix_reset_zeros(D2_phi);
@@ -716,7 +778,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			 *==================================================*/
 
 			//first derivative of the objective function
-			matrix_multiply(qp->P, x_now, D1_f0);
+			matrix_multiply(qp->P, qp->x, D1_f0);
 			matrix_add_by(D1_f0, qp->q);
 			matrix_scale_by(t, D1_f0);
 
@@ -738,20 +800,15 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			/* exact line search */
 			FLOAT curr_step_size;
-			FLOAT best_step_size = qp->line_search_num;
-			FLOAT curr_norm = 0;
+			FLOAT best_step_size = 1.0f;
+			FLOAT curr_cost = 0;
 			FLOAT best_cost = 0;
 
 			/* initialize the step size */
 			matrix_add(z_last, newton_step_obj, z_now); //scale = 1
-			matrix_multiply(F, z_now, x_now);
-			matrix_add_by(x_now, x_hat);
-			matrix_multiply(qp->P, x_now, D1_f0);
-			matrix_add_by(D1_f0, qp->q);
-			matrix_scale_by(t, D1_f0);
-			for(r = 0; r < D1_f0->row; r++) {
-				best_cost += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
-			}
+			matrix_multiply(F, z_now, qp->x);
+			matrix_add_by(qp->x, x_hat);
+			curr_cost = calc_objective_func_val(t, qp);
 
 			/* find the best step size iteratively */
 			for(i = (qp->line_search_num - 1); i > 0; i--) {
@@ -765,26 +822,18 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				matrix_add(z_last, scaled_newton_step_obj, z_now);
 
 				//calculate x from z
-				matrix_multiply(F, z_now, x_now);
-				matrix_add_by(x_now, x_hat);
+				matrix_multiply(F, z_now, qp->x);
+				matrix_add_by(qp->x, x_hat);
 
-				//calculate the first derivative
-				matrix_multiply(qp->P, x_now, D1_f0);
-				matrix_add_by(D1_f0, qp->q);
-				matrix_scale_by(t, D1_f0);
+				//calculate (x.' * P * x) + (q.' * r)
+				curr_cost = calc_objective_func_val(t, qp);
 
-				//calculate squared norm of the first derivative
-				curr_norm = 0;
-				for(r = 0; r < D1_f0->row; r++) {
-					curr_norm += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
-				}
-
-				//VERBOSE_PRINT("[exact line search] #%d: norm = %f, step_size = %f\n",
-				//              i, curr_norm, curr_step_size);
+				//VERBOSE_PRINT("[exact line search] #%d: cost = %f, step_size = %f\n",
+				//              i, curr_cost, curr_step_size);
 
 				//update best step size so far
-				if(curr_norm < best_cost) {
-					best_cost = curr_norm;
+				if(curr_cost < best_cost) {
+					best_cost = curr_cost;
 					best_step_size = curr_step_size;
 
 					//VERBOSE_PRINT("[exact line search]current best: #%d, step size: %f\n",
@@ -807,8 +856,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				matrix_add_by(z_now, scaled_newton_step_barrier);
 
 				//calculate x from z
-				matrix_multiply(F, z_now, x_now);
-				matrix_add_by(x_now, x_hat);
+				matrix_multiply(F, z_now, qp->x);
+				matrix_add_by(qp->x, x_hat);
 
 				/*====================================================================*
 				 * schrink the newton step if it is too big and breaks the inequality *
@@ -850,18 +899,17 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			VERBOSE_PRINT_MATRIX(*newton_step_obj);
 			VERBOSE_PRINT_MATRIX(*newton_step_barrier);
 			VERBOSE_PRINT_MATRIX(*z_now);
-			VERBOSE_PRINT_MATRIX(*x_now);
+			VERBOSE_PRINT_MATRIX(*qp->x);
 			VERBOSE_PRINT("t = %f\n", t);
 
 			qp->iters++;
 
-			FLOAT resid = vector_residual(x_now, x_last);
+			FLOAT resid = vector_residual(qp->x, x_last);
 			VERBOSE_PRINT("residual: %f\n", resid);
 			VERBOSE_PRINT("---\n");
 
 			/* exit if already converged */
 			if(resid < qp->eps || qp->iters == qp->max_iters) {
-				matrix_copy(qp->x, x_now);
 				break;
 			}
 		}

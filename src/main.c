@@ -92,7 +92,7 @@ int main(void)
 
 	printf("run time: %lf seconds\n"
 	       "optimization took %d iterations\n",
-	       end_time - start_time, qp.iters);
+	       end_time - start_time, qp.iters + 1);
 
 	return 0;
 }
