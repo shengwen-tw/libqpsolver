@@ -510,6 +510,46 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	//newton step times step size
 	vector_t *scaled_newton_step_barrier = matrix_new(qp->x->row, qp->x->column);
 
+	/*==============================================================================*
+	 * inequality constraint matrix (lower bound + upper bound + affine inequality) *
+	 *==============================================================================*/
+	int lb_size = (solve_lower_bound == true) ? qp->lb->row : 0;
+	int ub_size = (solve_upper_bound == true) ? qp->ub->row : 0;
+	int b_size = (solve_affine_inequality == true) ? qp->b->row : 0;
+
+	int A_inequality_row = lb_size + ub_size + b_size;
+	int A_inequality_column = qp->x->row;
+	matrix_t *A_inequality = matrix_zeros(A_inequality_row, A_inequality_column);
+
+	int b_inequality_row = lb_size + ub_size + b_size;
+	int b_inequality_column = 1;
+	matrix_t *b_inequality = matrix_new(b_inequality_row, b_inequality_column);
+
+	if(solve_lower_bound == true) {
+		for(r = 0; r < qp->lb->row; r++) {
+			matrix_at(A_inequality, r, r) = -1;
+			matrix_at(b_inequality, r, 0) = -matrix_at(qp->lb, r, 0);
+		}
+	}
+
+	if(solve_upper_bound == true) {
+		for(r = 0; r < qp->ub->row; r++) {
+			matrix_at(A_inequality, r + lb_size, r) = 1;
+			matrix_at(b_inequality, r + lb_size, 0) = matrix_at(qp->ub, r, 0);
+		}
+	}
+
+	if(solve_affine_inequality == true) {
+		for(r = 0; r < qp->A->row; r++) {
+			for(c = 0; c < qp->A->column; c++) {
+				matrix_at(A_inequality, r + lb_size + ub_size, c) =
+				    matrix_at(qp->A, r, c);
+			}
+			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
+			    matrix_at(qp->b, r, 0);
+		}
+	}
+
 	/* i-th inenquality constraint function */
 	FLOAT fi = 0;
 	FLOAT div_fi = 0;
@@ -622,105 +662,39 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_reset_zeros(D1_phi);
 			matrix_reset_zeros(D2_phi);
 
-#if (ENABLE_LOWER_BOUND_INEQUALITY == 1)
-			/*===================================================================*
-			 * calculate first and second derivative of lower bound inequalities *
-			 *===================================================================*/
+			/*=======================================================*
+					 * calculate first and second derivative of log barriers *
+					 *=======================================================*/
 
-			if(solve_lower_bound == true) {
-				for(r = 0; r < qp->lb->row; r++) {
-					fi = -matrix_at(x_now, r, 0) + matrix_at(qp->lb, r, 0);
-					div_fi = 1 / (fi + epsilon);
-					div_fi_squared = 1 / ((fi * fi) + epsilon);
+			for(r = 0; r < A_inequality->row; r++) {
+				/* calculate value of the log barrier function */
+				fi = 0;
+				for(j = 0; j < A_inequality->column; j++) {
+					fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
+				}
+				fi -= matrix_at(b_inequality, r, 0);
+				div_fi = -1 / (fi + epsilon);
+				div_fi_squared = 1 / ((fi * fi) + epsilon);
 
-					//first derivative of the inequality constraint function
-					matrix_reset_zeros(D1_fi);
-					matrix_at(D1_fi, r, 0) = -1;
+				/* calculate first derivative of the log barrier function */
+				for(i = 0; i < D1_phi->row; i++) {
+					matrix_at(D1_phi, i, 0) +=
+					    div_fi * matrix_at(A_inequality, r, i);
 
-					//first derivative of the log barrier function
-					matrix_at(D1_phi, r, 0) += div_fi;
+					matrix_at(D1_fi, i, 0) = matrix_at(A_inequality, r, i);
+				}
 
-					//second derivative of the log barrier function
-					matrix_transpose(D1_fi, D1_fi_t);
-					matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-					for(i = 0; i < D2_phi->row; i++) {
-						for(j = 0; j < D2_phi->column; j++) {
-							matrix_at(D2_phi, i, j) +=
-							    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
-						}
+				/* calculate second derivative of the log barrier function */
+				matrix_transpose(D1_fi, D1_fi_t);
+				matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
+
+				for(i = 0; i < D2_phi->row; i++) {
+					for(j = 0; j < D2_phi->column; j++) {
+						matrix_at(D2_phi, i, j) +=
+						    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 					}
 				}
 			}
-#endif
-
-#if (ENABLE_UPPER_BOUND_INEQUALITY == 1)
-			/*===================================================================*
-			 * calculate first and second derivative of upper bound inequalities *
-			 *===================================================================*/
-
-			if(solve_upper_bound == true) {
-				for(r = 0; r < qp->ub->row; r++) {
-					fi = matrix_at(x_now, r, 0) -  matrix_at(qp->ub, r, 0);
-					div_fi = -1 / (fi + epsilon);
-					div_fi_squared = 1 / ((fi * fi) + epsilon);
-
-					//first derivative of the inequality constraint function
-					matrix_reset_zeros(D1_fi);
-					matrix_at(D1_fi, r, 0) = 1;
-
-					//first derivative of the log barrier function
-					matrix_at(D1_phi, r, 0) += div_fi;
-
-					//second derivative of the log barrier function
-					matrix_transpose(D1_fi, D1_fi_t);
-					matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-					for(i = 0; i < D2_phi->row; i++) {
-						for(j = 0; j < D2_phi->column; j++) {
-							matrix_at(D2_phi, i, j) +=
-							    (div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j));
-						}
-					}
-				}
-			}
-#endif
-
-#if (ENABLE_AFFINE_INEQUALITY == 1)
-			/*==============================================================*
-			 * calculate first and second derivative of affine inequalities *
-			 *==============================================================*/
-
-			if(solve_affine_inequality == true) {
-				for(r = 0; r < qp->A->row; r++) {
-					/* calculate constraint function value */
-					fi = 0;
-					for(j = 0; j < qp->A->column; j++) {
-						fi += matrix_at(qp->A, r, j) * matrix_at(x_now, j, 0);
-					}
-					fi -= matrix_at(qp->b, r, 0);
-					div_fi = -1 / (fi + epsilon);
-					div_fi_squared = 1 / ((fi * fi) + epsilon);
-
-					/* calculate first derivative */
-					for(i = 0; i < D1_phi->row; i++) {
-						matrix_at(D1_phi, i, 0) +=
-						    div_fi * matrix_at(qp->A, r, i);
-
-						matrix_at(D1_fi, i, 0) = matrix_at(qp->A, r, i);
-					}
-
-					/* calculate second derivative */
-					matrix_transpose(D1_fi, D1_fi_t);
-					matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
-
-					for(i = 0; i < D2_phi->row; i++) {
-						for(j = 0; j < D2_phi->column; j++) {
-							matrix_at(D2_phi, i, j) +=
-							    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
-						}
-					}
-				}
-			}
-#endif
 
 			/*====================================================*
 			 * calculate newton step of the log barrier functions *
@@ -772,7 +746,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			FLOAT curr_norm = 0;
 			FLOAT smallest_norm = 0;
 
-			/* initial the step size */
+			/* initialize the step size */
 			matrix_add(z_last, newton_step_obj, z_now); //scale = 1
 			matrix_multiply(F, z_now, x_now);
 			matrix_add_by(x_now, x_hat);
@@ -829,76 +803,40 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				step_too_large = false;
 
 				/* update the optimization variable */
-				for(r = 0; r < z_now->row; r++) {
-					//update z with newton step
-					matrix_scaling(best_step_size, newton_step_obj, scaled_newton_step_obj);
-					matrix_add(z_last, scaled_newton_step_obj, z_now);
+				//update z with newton step
+				matrix_scaling(best_step_size, newton_step_obj, scaled_newton_step_obj);
+				matrix_add(z_last, scaled_newton_step_obj, z_now);
 
-					matrix_scaling(0.05, newton_step_barrier, scaled_newton_step_barrier);
-					matrix_add_by(z_now, scaled_newton_step_barrier);
+				matrix_scaling(0.1, newton_step_barrier, scaled_newton_step_barrier);
+				matrix_add_by(z_now, scaled_newton_step_barrier);
 
-					//calculate x from z
-					matrix_multiply(F, z_now, x_now);
-					matrix_add_by(x_now, x_hat);
+				//calculate x from z
+				matrix_multiply(F, z_now, x_now);
+				matrix_add_by(x_now, x_hat);
 
-#if 0//(ENABLE_LOWER_BOUND_INEQUALITY == 1)
-					/*==================================================*
-					 * check if lower bound constraints are still valid *
-					 *==================================================*/
-					if(solve_lower_bound == true) {
-						if(matrix_at(x_now, r, 0) < matrix_at(qp->lb, r, 0)) {
-							step_too_large = true;
-							break;
-						}
+				/*====================================================================*
+				 * schrink the newton step if it is too big and breaks the inequality *
+				 * constraints                                                        *
+				 *====================================================================*/
+				for(i = 0; i < A_inequality->row; i++) {
+					fi = 0;
+					for(j = 0; j < A_inequality->column; j++) {
+						fi += matrix_at(A_inequality, i, j) * matrix_at(qp->x, j, 0);
 					}
-#endif
 
-#if 0//(ENABLE_UPPER_BOUND_INEQUALITY == 1)
-					/*==================================================*
-					 * check if upper bound constraints are still valid *
-					 *==================================================*/
-					if(solve_upper_bound == true) {
-						if(matrix_at(x_now, r, 0) > matrix_at(qp->ub, r, 0)) {
-							step_too_large = true;
-							break;
-						}
-					}
-#endif
-				}
-
-#if 0//(ENABLE_AFFINE_INEQUALITY == 1)
-				/*========================================================*
-				 * check if affine inequality constraints are still valid *
-				 *========================================================*/
-				if(solve_affine_inequality == true) {
-					for(i = 0; i < qp->A->row; i++) {
-						fi = 0;
-						for(j = 0; j < qp->A->column; j++) {
-							fi += matrix_at(qp->A, i, j) * matrix_at(x_now, j, 0);
-						}
-
-						if(fi > matrix_at(qp->b, i, 0)) {
-							step_too_large = true;
-							break;
-						}
+					if(fi > matrix_at(b_inequality, i, 0)) {
+						step_too_large = true;
+						break;
 					}
 				}
-#endif
 
-				/*================================================================*
-				 * schrink the newton step if the step is too large and break the *
-				 * inequality constraints                                         *
-				 *================================================================*/
 				if(step_too_large == false) {
 					break;
 				} else {
 					matrix_scale_by(qp->a, newton_step_obj);
 					matrix_scale_by(qp->a, newton_step_barrier);
-
-					PRINT_MATRIX(*x_now);
-					PRINT_MATRIX(*newton_step_obj);
-					PRINT_MATRIX(*scaled_newton_step_barrier);
 				}
+
 			}
 
 			VERBOSE_PRINT_MATRIX(*Q);
