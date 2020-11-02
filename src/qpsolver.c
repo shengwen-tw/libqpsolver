@@ -506,10 +506,19 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	solve_upper_bound = false;
 	solve_affine_inequality = false;
 
-	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
-
 	int r, c;
 	int i, j;
+
+	/* increase numerical stability */
+	//avoid divide by zero
+	const FLOAT epsilon = 1e-14;
+	//avoid inversion of singular matrix
+	matrix_t *epsilon_matrix = matrix_new(qp->x->row, qp->x->row);
+	for(r = 0; r < epsilon_matrix->row; r++) {
+		for(c = 0; c < epsilon_matrix->column; c++) {
+			matrix_at(epsilon_matrix, r, c) = epsilon;
+		}
+	}
 
 	//log barrier's parameter
 	FLOAT t = qp->t_init;
@@ -738,12 +747,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_multiply(F_t, D2_phi_F, D2_phi_tilde);
 
 			//calculate newton step
+			matrix_add_by(D2_phi_tilde, epsilon_matrix); //increase numerical stability
 			matrix_inverse(D2_phi_tilde, D2_phi_tilde_inv);
 			matrix_multiply(D2_phi_tilde_inv, D1_phi_tilde, newton_step_barrier);
 			matrix_scale_by(-1, newton_step_barrier);
-
-			//exact line search
-			//TODO
 
 			/*==================================================*
 			 * calculate newton step of the objective functions *
@@ -766,53 +773,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_multiply(F_t, D2_f0_F, D2_f_tilde);
 
 			//calculate newton step
+			matrix_add_by(D2_f_tilde, epsilon_matrix); //increase numerical stability
 			matrix_inverse(D2_f_tilde, D2_f_tilde_inv);
 			matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step_obj);
 			matrix_scale_by(-1, newton_step_obj);
-
-			/* exact line search */
-			FLOAT curr_step_size;
-			FLOAT best_step_size = 1.0f;
-			FLOAT curr_cost = 0;
-			FLOAT best_cost = 0;
-
-			/* initialize the step size */
-			matrix_add(z_last, newton_step_obj, z_now); //scale = 1
-			matrix_multiply(F, z_now, qp->x);
-			matrix_add_by(qp->x, x_hat);
-			curr_cost = calc_objective_func_val(t, qp);
-
-			/* find the best step size iteratively */
-			for(i = (qp->line_search_num - 1); i > 0; i--) {
-				curr_step_size = (FLOAT)i / (FLOAT)qp->line_search_num;
-
-				if(curr_step_size <= qp->line_search_min_step_size) {
-					break;
-				}
-
-				matrix_scaling(curr_step_size, newton_step_obj, scaled_newton_step_obj);
-				matrix_add(z_last, scaled_newton_step_obj, z_now);
-
-				//calculate x from z
-				matrix_multiply(F, z_now, qp->x);
-				matrix_add_by(qp->x, x_hat);
-
-				//calculate (x.' * P * x) + (q.' * r)
-				curr_cost = calc_objective_func_val(t, qp);
-
-				//VERBOSE_PRINT("[exact line search] #%d: cost = %f, step_size = %f\n",
-				//              i, curr_cost, curr_step_size);
-
-				//update best step size so far
-				if(curr_cost < best_cost) {
-					best_cost = curr_cost;
-					best_step_size = curr_step_size;
-
-					//VERBOSE_PRINT("[exact line search]current best: #%d, step size: %f\n",
-					//              i, best_step_size);
-				}
-			}
-			//VERBOSE_PRINT("[exact line search] best step size: %f\n", best_step_size);
 
 			/*==================================*
 			 * update the optimization variable *
@@ -822,9 +786,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_scaling(1, newton_step_obj, scaled_newton_step_obj);
 			matrix_add(z_last, scaled_newton_step_obj, z_now);
 
-            //FIXME
-			//matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
-			//matrix_add_by(z_now, scaled_newton_step_barrier);
+			//FIXME
+			matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
+			matrix_add_by(z_now, scaled_newton_step_barrier);
 
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
