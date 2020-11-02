@@ -18,14 +18,13 @@ void qp_set_default(qp_t *qp)
 
 	qp->iters = 0;
 
-	qp->eps = 1e-6;        //residual value to stop the optimization
-	qp->a = 0.95;          //line searching parameter of the newton step
-	qp->mu = 1.1;          //stiffness growth rate of the log barrier function
-	qp->t_init = 0.01;        //initial stiffness of the log barrier
-	qp->t_max = 50000;   //maximum stiffness of the log barrier
-	qp->max_iters = 10000;    //maximum iteration times
+	qp->eps = 1e-6;         //residual value to stop the optimization
+	qp->mu = 1.5;           //stiffness growth rate of the log barrier function
+	qp->t_init = 0.01;      //initial stiffness of the log barrier
+	qp->t_max = 50000;      //maximum stiffness of the log barrier
+	qp->max_iters = 10000;  //maximum iteration times
 
-	qp->line_search_num = 100;
+	qp->line_search_num = 10000;
 	qp->line_search_min_step_size = 0.1;
 }
 
@@ -460,40 +459,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			matrix_multiply(D2_f0_inv, D1_f0, newton_step);
 			matrix_scale_by(-1, newton_step);
 
-			/* update the optimization variable */
+			//update the optimization variable
 			matrix_add(x_last, newton_step, qp->x);
 
-#if 0
-			bool step_too_large;
-			while(1) {
-				step_too_large = false;
-
-				/* update the optimization variable */
-				matrix_add(x_last, newton_step, qp->x);
-
-				/*====================================================================*
-				 * schrink the newton step if it is too big and breaks the inequality *
-				 * constraints                                                        *
-				 *====================================================================*/
-				for(i = 0; i < A_inequality->row; i++) {
-					fi = 0;
-					for(j = 0; j < A_inequality->column; j++) {
-						fi += matrix_at(A_inequality, i, j) * matrix_at(qp->x, j, 0);
-					}
-
-					if(fi > matrix_at(b_inequality, i, 0)) {
-						step_too_large = true;
-						break;
-					}
-				}
-
-				if(step_too_large == false) {
-					break;
-				} else {
-					matrix_scale_by(qp->a, newton_step);
-				}
-			}
-#endif
 			VERBOSE_PRINT_MATRIX(*D1_phi);
 			VERBOSE_PRINT_MATRIX(*D2_phi);
 			VERBOSE_PRINT_MATRIX(*D1_f0);
@@ -846,61 +814,20 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			}
 			//VERBOSE_PRINT("[exact line search] best step size: %f\n", best_step_size);
 
-			/* update the optimization variable */
+			/*==================================*
+			 * update the optimization variable *
+			 *==================================*/
+
 			//update z with newton step
-			matrix_scaling(best_step_size, newton_step_obj, scaled_newton_step_obj);
+			matrix_scaling(1, newton_step_obj, scaled_newton_step_obj);
 			matrix_add(z_last, scaled_newton_step_obj, z_now);
 
-			matrix_scaling(0.1, newton_step_barrier, scaled_newton_step_barrier);
+			matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
 			matrix_add_by(z_now, scaled_newton_step_barrier);
 
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
 			matrix_add_by(qp->x, x_hat);
-
-#if 0
-			/* make sure newton step won't exceed the inequality bounds */
-			bool step_too_large;
-			while(1) {
-				step_too_large = false;
-
-				/* update the optimization variable */
-				//update z with newton step
-				matrix_scaling(best_step_size, newton_step_obj, scaled_newton_step_obj);
-				matrix_add(z_last, scaled_newton_step_obj, z_now);
-
-				matrix_scaling(0.1, newton_step_barrier, scaled_newton_step_barrier);
-				matrix_add_by(z_now, scaled_newton_step_barrier);
-
-				//calculate x from z
-				matrix_multiply(F, z_now, qp->x);
-				matrix_add_by(qp->x, x_hat);
-
-				/*====================================================================*
-				 * schrink the newton step if it is too big and breaks the inequality *
-				 * constraints                                                        *
-				 *====================================================================*/
-				for(i = 0; i < A_inequality->row; i++) {
-					fi = 0;
-					for(j = 0; j < A_inequality->column; j++) {
-						fi += matrix_at(A_inequality, i, j) * matrix_at(qp->x, j, 0);
-					}
-
-					if(fi > matrix_at(b_inequality, i, 0)) {
-						step_too_large = true;
-						break;
-					}
-				}
-
-				if(step_too_large == false) {
-					break;
-				} else {
-					matrix_scale_by(qp->a, newton_step_obj);
-					matrix_scale_by(qp->a, newton_step_barrier);
-				}
-
-			}
-#endif
 
 			VERBOSE_PRINT_MATRIX(*Q);
 			VERBOSE_PRINT_MATRIX(*R);

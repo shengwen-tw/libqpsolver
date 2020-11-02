@@ -41,9 +41,8 @@ typedef struct {
 
 	/* stop criterions */
 	FLOAT eps;
-	FLOAT a;
 	FLOAT t_init;
-	FLOAT t_max_inc;
+	FLOAT t_max;
 	FLOAT mu;
 	int max_iters;
 	int iters;
