@@ -71,7 +71,7 @@ int main(void)
 	qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
 	qp_solve_set_lower_bound_inequality_constraints(&qp, &lb);
 	qp_solve_set_upper_bound_inequality_constraints(&qp, &ub);
-//	qp_solve_set_affine_inequality_constraints(&qp, &A, &b);
+	qp_solve_set_affine_inequality_constraints(&qp, &A, &b);
 
 	/* check if start point is in the feasible set */
 	bool feasible = qp_start_point_feasibility_check(&qp);

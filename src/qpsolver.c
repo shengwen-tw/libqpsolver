@@ -501,11 +501,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
-	//FIXME
-	solve_lower_bound = false;
-	solve_upper_bound = false;
-	solve_affine_inequality = false;
-
 	int r, c;
 	int i, j;
 
@@ -540,19 +535,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	//second derivative of the summation of the log barrier functions
 	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
 
-	/*=================================*
-	 * gradient descent step variables *
-	 *=================================*/
-
-	//newton step's vector
-	vector_t *newton_step_obj = matrix_new(qp->x->row, qp->x->column);
-	//newton step times step size
-	vector_t *scaled_newton_step_obj = matrix_new(qp->x->row, qp->x->column);
-
-	//newton step's vector
-	vector_t *newton_step_barrier = matrix_new(qp->x->row, qp->x->column);
-	//newton step times step size
-	vector_t *scaled_newton_step_barrier = matrix_new(qp->x->row, qp->x->column);
+	//newton step
+	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/*==============================================================================*
 	 * inequality constraint matrix (lower bound + upper bound + affine inequality) *
@@ -632,15 +616,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_t *D2_f0_F = matrix_new(D2_f_tilde->row, D2_f_tilde->column);
 	//inverted second derivative of the equality constraints eliminated objective function
 	matrix_t *D2_f_tilde_inv = matrix_new(qp->x->row, qp->x->row);
-
-	//first derivative of the equality constraints eliminated objective function
-	matrix_t *D1_phi_tilde = matrix_new(qp->x->row, qp->x->column);
-	//second derivative of the equality constraints eliminated objective function
-	matrix_t *D2_phi_tilde = matrix_new(qp->P->row, qp->P->column);
-	//D2_f0 times F
-	matrix_t *D2_phi_F = matrix_new(D2_phi_tilde->row, D2_phi_tilde->column);
-	//inverted second derivative of the summation of the log barrier functions
-	matrix_t *D2_phi_tilde_inv = matrix_new(qp->x->row, qp->x->row);
 
 	/*=====================================*
 	 * caclulate null space matrix of A_eq *
@@ -735,23 +710,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				}
 			}
 
-			/*====================================================*
-			 * calculate newton step of the log barrier functions *
-			 *====================================================*/
-
-			//null space transform of first derivative
-			matrix_multiply(F_t, D1_phi, D1_phi_tilde);
-
-			//null space transform of second derivative
-			matrix_multiply(D2_phi, F, D2_phi_F);
-			matrix_multiply(F_t, D2_phi_F, D2_phi_tilde);
-
-			//calculate newton step
-			matrix_add_by(D2_phi_tilde, epsilon_matrix); //increase numerical stability
-			matrix_inverse(D2_phi_tilde, D2_phi_tilde_inv);
-			matrix_multiply(D2_phi_tilde_inv, D1_phi_tilde, newton_step_barrier);
-			matrix_scale_by(-1, newton_step_barrier);
-
 			/*==================================================*
 			 * calculate newton step of the objective functions *
 			 *==================================================*/
@@ -765,6 +723,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_copy(D2_f0, qp->P);
 			matrix_scale_by(t, D2_f0);
 
+			//combine derivatives of objective function and log barrier functions
+			matrix_add_by(D1_f0, D1_phi);
+			matrix_add_by(D2_f0, D2_phi);
+
 			//null space transform of the first derivative
 			matrix_multiply(F_t, D1_f0, D1_f_tilde);
 
@@ -775,20 +737,15 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			//calculate newton step
 			matrix_add_by(D2_f_tilde, epsilon_matrix); //increase numerical stability
 			matrix_inverse(D2_f_tilde, D2_f_tilde_inv);
-			matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step_obj);
-			matrix_scale_by(-1, newton_step_obj);
+			matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step);
+			matrix_scale_by(-1, newton_step);
 
 			/*==================================*
 			 * update the optimization variable *
 			 *==================================*/
 
 			//update z with newton step
-			matrix_scaling(1, newton_step_obj, scaled_newton_step_obj);
-			matrix_add(z_last, scaled_newton_step_obj, z_now);
-
-			//FIXME
-			matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
-			matrix_add_by(z_now, scaled_newton_step_barrier);
+			matrix_add(z_last, newton_step, z_now);
 
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
@@ -806,8 +763,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			VERBOSE_PRINT_MATRIX(*D1_f_tilde);
 			VERBOSE_PRINT_MATRIX(*D2_f_tilde);
 			VERBOSE_PRINT_MATRIX(*D2_f_tilde_inv);
-			VERBOSE_PRINT_MATRIX(*newton_step_obj);
-			VERBOSE_PRINT_MATRIX(*newton_step_barrier);
+			VERBOSE_PRINT_MATRIX(*newton_step);
 			VERBOSE_PRINT_MATRIX(*z_now);
 			VERBOSE_PRINT_MATRIX(*qp->x);
 			VERBOSE_PRINT("t = %f\n", t);
@@ -834,7 +790,21 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_delete(D1_fi_D1_fi_t);
 	matrix_delete(D1_phi);
 	matrix_delete(D2_phi);
-	matrix_delete(newton_step_obj);
+	matrix_delete(newton_step);
+	matrix_delete(A_inequality);
+	matrix_delete(b_inequality);
+	matrix_delete(F);
+	matrix_delete(F_t);
+	matrix_delete(Q);
+	matrix_delete(R);
+	matrix_delete(x_hat);
+	matrix_delete(z_now);
+	matrix_delete(z_last);
+	matrix_delete(x_last);
+	matrix_delete(D1_f_tilde);
+	matrix_delete(D2_f_tilde);
+	matrix_delete(D2_f0_F);
+	matrix_delete(D2_f_tilde_inv);
 }
 
 int qp_solve_start(qp_t *qp)
