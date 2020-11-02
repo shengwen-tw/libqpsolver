@@ -20,10 +20,10 @@ void qp_set_default(qp_t *qp)
 
 	qp->eps = 1e-6;        //residual value to stop the optimization
 	qp->a = 0.95;          //line searching parameter of the newton step
-	qp->mu = 20;           //stiffness growth rate of the log barrier function
-	qp->t_init = 1;        //initial stiffness of the log barrier
-	qp->t_max_inc = 100;   //maximum stiffness of the log barrier
-	qp->max_iters = 50;    //maximum iteration times
+	qp->mu = 1.1;          //stiffness growth rate of the log barrier function
+	qp->t_init = 0.01;        //initial stiffness of the log barrier
+	qp->t_max = 50000;   //maximum stiffness of the log barrier
+	qp->max_iters = 10000;    //maximum iteration times
 
 	qp->line_search_num = 100;
 	qp->line_search_min_step_size = 0.1;
@@ -383,7 +383,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(qp->iters < qp->max_iters) {
-		if(t > qp->t_max_inc) {
+		if(t > qp->t_max) {
 			break;
 		}
 
@@ -460,6 +460,10 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			matrix_multiply(D2_f0_inv, D1_f0, newton_step);
 			matrix_scale_by(-1, newton_step);
 
+			/* update the optimization variable */
+			matrix_add(x_last, newton_step, qp->x);
+
+#if 0
 			bool step_too_large;
 			while(1) {
 				step_too_large = false;
@@ -489,7 +493,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 					matrix_scale_by(qp->a, newton_step);
 				}
 			}
-
+#endif
 			VERBOSE_PRINT_MATRIX(*D1_phi);
 			VERBOSE_PRINT_MATRIX(*D2_phi);
 			VERBOSE_PRINT_MATRIX(*D1_f0);
@@ -511,7 +515,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			}
 		}
 
-		t += qp->mu;
+		t *= qp->mu;
 	}
 
 	matrix_delete(x_last);
@@ -705,7 +709,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(qp->iters < qp->max_iters) {
-		if(t > (qp->t_init + qp->t_max_inc)) {
+		if(t > (qp->t_init + qp->t_max)) {
 			break;
 		}
 
@@ -842,6 +846,19 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			}
 			//VERBOSE_PRINT("[exact line search] best step size: %f\n", best_step_size);
 
+			/* update the optimization variable */
+			//update z with newton step
+			matrix_scaling(best_step_size, newton_step_obj, scaled_newton_step_obj);
+			matrix_add(z_last, scaled_newton_step_obj, z_now);
+
+			matrix_scaling(0.1, newton_step_barrier, scaled_newton_step_barrier);
+			matrix_add_by(z_now, scaled_newton_step_barrier);
+
+			//calculate x from z
+			matrix_multiply(F, z_now, qp->x);
+			matrix_add_by(qp->x, x_hat);
+
+#if 0
 			/* make sure newton step won't exceed the inequality bounds */
 			bool step_too_large;
 			while(1) {
@@ -883,6 +900,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				}
 
 			}
+#endif
 
 			VERBOSE_PRINT_MATRIX(*Q);
 			VERBOSE_PRINT_MATRIX(*R);
@@ -914,7 +932,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			}
 		}
 
-		t += qp->mu;
+		t *= qp->mu;
 	}
 
 	matrix_delete(D1_f0);
