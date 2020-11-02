@@ -822,8 +822,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_scaling(1, newton_step_obj, scaled_newton_step_obj);
 			matrix_add(z_last, scaled_newton_step_obj, z_now);
 
-			matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
-			matrix_add_by(z_now, scaled_newton_step_barrier);
+            //FIXME
+			//matrix_scaling(1, newton_step_barrier, scaled_newton_step_barrier);
+			//matrix_add_by(z_now, scaled_newton_step_barrier);
 
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
