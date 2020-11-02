@@ -91,6 +91,7 @@ matrix_t* matrix_zeros(int r, int c)
 void matrix_delete(matrix_t *mat)
 {
 	if(mat->data != NULL) free(mat->data);
+	if(mat != NULL) free(mat);
 }
 
 void matrix_reset_zeros(matrix_t *mat)
