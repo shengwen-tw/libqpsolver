@@ -18,14 +18,11 @@ void qp_set_default(qp_t *qp)
 
 	qp->iters = 0;
 
-	qp->eps = 1e-6;         //residual value to stop the optimization
+	qp->eps = 1e-6;         //residual value to stop the gradient descent inner loop
 	qp->mu = 1.5;           //stiffness growth rate of the log barrier function
 	qp->t_init = 0.01;      //initial stiffness of the log barrier
 	qp->t_max = 50000;      //maximum stiffness of the log barrier
 	qp->max_iters = 10000;  //maximum iteration times
-
-	qp->line_search_num = 10000;
-	qp->line_search_min_step_size = 0.1;
 }
 
 bool qp_start_point_feasibility_check(qp_t *qp)
