@@ -90,64 +90,6 @@ bool qp_start_point_feasibility_check(qp_t *qp)
 	return true;
 }
 
-float calc_objective_func_val(FLOAT t, qp_t *qp)
-{
-	FLOAT f = 0;
-
-	/* calculate transpose(x) * P * x */
-	matrix_t *xPx = matrix_new(1, 1);
-	matrix_t *Px = matrix_new(qp->x->row, qp->x->column);
-	matrix_t *xt = matrix_new(qp->x->column, qp->x->row);
-	matrix_transpose(qp->x, xt);
-	matrix_multiply(qp->P, qp->x, Px);
-	matrix_multiply(xt, Px, xPx);
-
-	/* calculate tranpose(q) * r */
-	matrix_t *qt_x = matrix_new(1, 1);
-	matrix_t *qt = matrix_new(qp->q->column, qp->q->row);
-	matrix_transpose(qp->q, qt);
-	matrix_multiply(qt, qp->x, qt_x);
-
-	f = matrix_at(xPx, 0, 0) + matrix_at(qt_x, 0, 0);
-
-	matrix_delete(xPx);
-	matrix_delete(Px);
-	matrix_delete(xt);
-	matrix_delete(qt_x);
-	matrix_delete(qt);
-
-	return t * f;
-}
-
-float calc_log_barrier_objective_func_val(FLOAT t, qp_t *qp, matrix_t *A_inequality)
-{
-	FLOAT f = 0, sum_phi = 0;
-
-	/* calculate transpose(x) * P * x */
-	matrix_t *xPx = matrix_new(1, 1);
-	matrix_t *Px = matrix_new(qp->x->row, qp->x->column);
-	matrix_t *xt = matrix_new(qp->x->column, qp->x->row);
-	matrix_transpose(qp->x, xt);
-	matrix_multiply(qp->P, qp->x, Px);
-	matrix_multiply(xt, Px, xPx);
-
-	/* calculate tranpose(q) * r */
-	matrix_t *qt_x = matrix_new(1, 1);
-	matrix_t *qt = matrix_new(qp->q->column, qp->q->row);
-	matrix_transpose(qp->q, qt);
-	matrix_multiply(qt, qp->x, qt_x);
-
-	f = matrix_at(xPx, 0, 0) + matrix_at(qt_x, 0, 0);
-
-	matrix_delete(xPx);
-	matrix_delete(Px);
-	matrix_delete(xt);
-	matrix_delete(qt_x);
-	matrix_delete(qt);
-
-	return t * f + sum_phi;
-}
-
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
 {
 	qp->x = x;
@@ -184,6 +126,9 @@ void qp_solve_set_affine_inequality_constraints(qp_t *qp, matrix_t *A, vector_t 
 
 static void qp_solve_no_constraint_problem(qp_t *qp)
 {
+	VERBOSE_PRINT("identify quadratic programming problem without any "
+	              "constraints\n");
+
 	/* the closed form solution is given by setting the first derivative equal
 	 * to zero, i.e: Px = -q */
 
@@ -201,6 +146,9 @@ static void qp_solve_no_constraint_problem(qp_t *qp)
 
 static void qp_solve_equality_constraint_problem(qp_t *qp)
 {
+	VERBOSE_PRINT("identify qudratic programming problem with equality "
+	              "constraint\n");
+
 	/* the closed form solution of the problem can be obtained by solving the *
 	 * KKT system, i.e: [P  A.'][ x*] = [-q]                                  *
 	 *                  [A   0 ][nu*]   [ b]                                  *
@@ -294,9 +242,20 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	free(qb_vec.data);
 }
 
+static void qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
+        bool solve_upper_bound, bool solve_affine_inequality)
+{
+}
+
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
+	VERBOSE_PRINT("identify qudratic programming problem with inequality "
+	              "constraint\n");
+
+	qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
+	                                        solve_upper_bound, solve_affine_inequality);
+
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
@@ -495,9 +454,20 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	matrix_delete(newton_step);
 }
 
+static void qp_equality_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
+        bool solve_upper_bound, bool solve_affine_inequality)
+{
+}
+
 static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
+	VERBOSE_PRINT("identify qudratic programming problem with equality "
+	              "and inequality constraints\n");
+
+	qp_equality_inequality_constraint_problem_phase1(qp, solve_lower_bound,
+	        solve_upper_bound, solve_affine_inequality);
+
 	int r, c;
 	int i, j;
 
@@ -822,34 +792,22 @@ int qp_solve_start(qp_t *qp)
 
 	/* no constraint optimization */
 	if(!solve_equalities && !solve_inequalities) {
-		VERBOSE_PRINT("identify quadratic programming problem without any "
-		              "constraints\n");
-
 		qp_solve_no_constraint_problem(qp);
 	}
 
 	/* equality constrained optmization */
 	if(solve_equalities && !solve_inequalities) {
-		VERBOSE_PRINT("identify qudratic programming problem with equality "
-		              "constraint\n");
-
 		qp_solve_equality_constraint_problem(qp);
 	}
 
 	/* inequality constrained optimization */
 	if(!solve_equalities && solve_inequalities) {
-		VERBOSE_PRINT("identify qudratic programming problem with inequality "
-		              "constraint\n");
-
 		qp_solve_inequality_constraint_problem(qp, solve_lower_bound,
 		                                       solve_upper_bound, solve_affine_inequality);
 	}
 
 	/* equality-inequality constrained optimization */
 	if(solve_equalities && solve_inequalities) {
-		VERBOSE_PRINT("identify qudratic programming problem with equality "
-		              "and inequality constraints\n");
-
 		qp_solve_equality_inequality_constraint_problem(qp, solve_lower_bound,
 		        solve_upper_bound, solve_affine_inequality);
 	}
