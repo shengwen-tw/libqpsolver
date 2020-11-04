@@ -242,9 +242,235 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	free(qb_vec.data);
 }
 
-static void qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
+static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
+	VERBOSE_PRINT("quadratic programming inequality constraint phase1 start.\n");
+
+	int phase1_max_iters = 10000; //XXX
+	int phase1_iters = 0; //XXX
+
+	FLOAT s_descent_rate = 0.9; //XXX
+
+	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
+
+	int r, c;
+	int i, j;
+
+	FLOAT slack_margin_coeff = 10; //XXX
+	FLOAT s;
+	FLOAT s_end_size = 1e-8; //XXX
+
+	FLOAT t;
+
+	//save previous optimization result
+	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
+	matrix_copy(x_last, qp->x);
+
+	//first derivative of the i-th inequality constraint function
+	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
+	//transposed first derivative of the i-th inequality constraint function
+	matrix_t *D1_fi_t = matrix_zeros(qp->x->column, qp->x->row);
+	//D[fi(x)] * D[fi(x)].'
+	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
+
+	//first derivative of the sumation of log barrier functions
+	matrix_t *D1_phi = matrix_new(qp->x->row, qp->x->column);
+	//second derivative of the summation of the log barrier functions
+	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
+	//inverted derivative of the summation of the log barrier functions
+	matrix_t *D2_phi_inv = matrix_new(qp->x->row, qp->x->row);
+
+	/* i-th inenquality constraint function */
+	FLOAT fi = 0;
+	FLOAT div_fi = 0;
+	FLOAT div_fi_squared = 0;
+
+	//newton step's vector
+	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
+
+	/* inequality constraint matrix (lower bound + upper bound + affine inequality) */
+	int lb_size = (solve_lower_bound == true) ? qp->lb->row : 0;
+	int ub_size = (solve_upper_bound == true) ? qp->ub->row : 0;
+	int b_size = (solve_affine_inequality == true) ? qp->b->row : 0;
+
+	int A_inequality_row = lb_size + ub_size + b_size;
+	int A_inequality_column = qp->x->row;
+	matrix_t *A_inequality = matrix_zeros(A_inequality_row, A_inequality_column);
+
+	int b_inequality_row = lb_size + ub_size + b_size;
+	int b_inequality_column = 1;
+	matrix_t *b_inequality = matrix_new(b_inequality_row, b_inequality_column);
+
+	if(solve_lower_bound == true) {
+		for(r = 0; r < qp->lb->row; r++) {
+			matrix_at(A_inequality, r, r) = -1;
+			matrix_at(b_inequality, r, 0) = -matrix_at(qp->lb, r, 0);
+		}
+	}
+
+	if(solve_upper_bound == true) {
+		for(r = 0; r < qp->ub->row; r++) {
+			matrix_at(A_inequality, r + lb_size, r) = 1;
+			matrix_at(b_inequality, r + lb_size, 0) = matrix_at(qp->ub, r, 0);
+		}
+	}
+
+	if(solve_affine_inequality == true) {
+		for(r = 0; r < qp->A->row; r++) {
+			for(c = 0; c < qp->A->column; c++) {
+				matrix_at(A_inequality, r + lb_size + ub_size, c) =
+				    matrix_at(qp->A, r, c);
+			}
+			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
+			    matrix_at(qp->b, r, 0);
+		}
+	}
+
+	/*============================================*
+	 * initialize the inequality slack variable s *
+	 *============================================*/
+	float fi_max = 0;
+
+	/* init value of fi_max */
+	for(j = 0; j < A_inequality->column; j++) {
+		fi += matrix_at(A_inequality, 0, j) * matrix_at(qp->x, j, 0);
+	}
+	fi_max -= matrix_at(b_inequality, 0, 0);
+
+	/* search for the largest fi_max */
+	for(r = 1; r < b_inequality->row; r++) {
+		/* calculate value of the log barrier function */
+		fi = 0;
+		for(c = 0; c < A_inequality->column; c++) {
+			fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
+		}
+		fi -= matrix_at(b_inequality, r, 0);
+
+		if(fi > fi_max) {
+			fi_max = fi;
+		}
+	}
+
+	s = -slack_margin_coeff * fi_max;
+
+	VERBOSE_PRINT("s(0) = %f\n", s);
+
+	/* most outer loop minimize the s variable */
+	while(s > s_end_size) {
+		t = qp->t_init;
+
+		/* middle loop varies the stiffness of the log barrier functions */
+		while(1) {
+			if(phase1_iters >= phase1_max_iters) {
+				return QP_PHASE1_INFEASIBLE;
+			}
+
+			if(t > qp->t_max) {
+				break;
+			}
+
+			/* inner loop do the gradient descent */
+			while(1) {
+				if(phase1_iters >= phase1_max_iters) {
+					return QP_PHASE1_INFEASIBLE;
+				}
+
+				VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
+
+				/* preseve last x for checking convergence */
+				matrix_copy(x_last, qp->x);
+
+				matrix_reset_zeros(D1_phi);
+				matrix_reset_zeros(D2_phi);
+
+				/* calculate first and second derivative of log barriers */
+				for(r = 0; r < A_inequality->row; r++) {
+					/* calculate value of the log barrier function */
+					fi = 0;
+					for(j = 0; j < A_inequality->column; j++) {
+						fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
+					}
+					fi = fi - matrix_at(b_inequality, r, 0) - s;
+					div_fi = -1 / (fi + epsilon);
+					div_fi_squared = 1 / ((fi * fi) + epsilon);
+
+					/* calculate first derivative of the log barrier function */
+					for(i = 0; i < D1_phi->row; i++) {
+						matrix_at(D1_phi, i, 0) +=
+						    div_fi * matrix_at(A_inequality, r, i);
+
+						matrix_at(D1_fi, i, 0) = matrix_at(A_inequality, r, i);
+					}
+
+					/* calculate second derivative of the log barrier function */
+					matrix_transpose(D1_fi, D1_fi_t);
+					matrix_multiply(D1_fi, D1_fi_t, D1_fi_D1_fi_t);
+
+					for(i = 0; i < D2_phi->row; i++) {
+						for(j = 0; j < D2_phi->column; j++) {
+							matrix_at(D2_phi, i, j) +=
+							    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+						}
+					}
+				}
+
+				/* scale the log barrier derivatives */
+				FLOAT div_by_t = 1 / t;
+				matrix_scale_by(div_by_t, D1_phi);
+				matrix_scale_by(div_by_t, D2_phi);
+
+				/* calculate the newton step */
+				matrix_inverse(D2_phi, D2_phi_inv);
+				matrix_multiply(D2_phi_inv, D1_phi, newton_step);
+				matrix_scale_by(-1, newton_step);
+
+				/* update the optimization variable */
+				matrix_add(x_last, newton_step, qp->x);
+
+				phase1_iters++;
+
+				VERBOSE_PRINT_MATRIX(*D1_fi);
+				VERBOSE_PRINT_MATRIX(*D1_fi_t);
+				VERBOSE_PRINT_MATRIX(*D1_fi_D1_fi_t);
+				VERBOSE_PRINT_MATRIX(*D1_phi);
+				VERBOSE_PRINT_MATRIX(*D2_phi);
+				VERBOSE_PRINT_MATRIX(*D2_phi_inv);
+				VERBOSE_PRINT_MATRIX(*newton_step);
+				VERBOSE_PRINT("t = %f\n", t);
+				VERBOSE_PRINT("s = %f\n", s);
+
+				FLOAT resid =  vector_residual(qp->x, x_last);
+				VERBOSE_PRINT("residual: %f\n", resid);
+				VERBOSE_PRINT("---\n");
+
+				/* exit if already converged */
+				if(resid < qp->eps) {
+					break;
+				}
+			}
+
+			t *= qp->mu;
+		}
+
+		/* inequality check */
+		for(r = 1; r < b_inequality->row; r++) {
+			/* calculate value of the log barrier function */
+			fi = 0;
+			for(c = 0; c < A_inequality->column; c++) {
+				fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
+			}
+			fi = fi - matrix_at(b_inequality, r, 0) - s;
+
+			if(fi  > s) {
+				return QP_PHASE1_INFEASIBLE;
+			}
+		}
+
+		s = s * s_descent_rate;
+	}
+
+	return QP_PHASE1_FEASIBLE;
 }
 
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
@@ -253,8 +479,15 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	VERBOSE_PRINT("identify qudratic programming problem with inequality "
 	              "constraint\n");
 
-	qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
-	                                        solve_upper_bound, solve_affine_inequality);
+	int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
+	             solve_upper_bound, solve_affine_inequality);
+
+	if(phase1 == QP_PHASE1_FEASIBLE) {
+		VERBOSE_PRINT("phase1: feasible, start point found.");
+	} else {
+		VERBOSE_PRINT("phase1: infeasible, abort.");
+		return;
+	}
 
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 

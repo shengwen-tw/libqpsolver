@@ -20,6 +20,11 @@ enum {
 	QP_ERROR_INCOMPLETE_INEQUAILITY_CONSTRAINT
 } QP_RETURN_STATE;
 
+enum {
+	QP_PHASE1_FEASIBLE,
+	QP_PHASE1_INFEASIBLE
+} QP_PHASE1_RETVAL;
+
 typedef struct {
 	/* optimization variable */
 	vector_t *x;
