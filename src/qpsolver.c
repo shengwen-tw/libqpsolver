@@ -136,8 +136,7 @@ void qp_solve_set_affine_inequality_constraints(qp_t *qp, matrix_t *A, vector_t 
 
 static void qp_solve_no_constraint_problem(qp_t *qp)
 {
-	VERBOSE_PRINT("identify quadratic programming problem without any "
-	              "constraints\n");
+	VERBOSE_PRINT("[solver] problem type: unconstrained QP\n");
 
 	/* the closed form solution is given by setting the first derivative equal
 	 * to zero, i.e: Px = -q */
@@ -156,8 +155,7 @@ static void qp_solve_no_constraint_problem(qp_t *qp)
 
 static void qp_solve_equality_constraint_problem(qp_t *qp)
 {
-	VERBOSE_PRINT("identify qudratic programming problem with equality "
-	              "constraint\n");
+	VERBOSE_PRINT("[solver] problem type: equality constrainted QP\n");
 
 	/* the closed form solution of the problem can be obtained by solving the *
 	 * KKT system, i.e: [P  A.'][ x*] = [-q]                                  *
@@ -187,7 +185,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 		matrix_at(&qb_vec, r + qp->q->row, 0) =
 		    matrix_at(qp->b_eq, r, 0);
 	}
-	VERBOSE_PRINT_MATRIX(qb_vec);
+	DEBUG_PRINT_MATRIX(qb_vec);
 
 	/* construct the KKT matrix */
 	int kkt_row = qp->P->row + qp->A_eq->row;
@@ -225,7 +223,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 			matrix_at(&KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
 		}
 	}
-	VERBOSE_PRINT_MATRIX(KKT);
+	DEBUG_PRINT_MATRIX(KKT);
 
 	/* construct kkt solution vector */
 	int kkt_sol_row = qp->x->row + qp->b_eq->row;
@@ -239,7 +237,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 
 	/* solve the KKT system */
 	solve_linear_system(&KKT, &kkt_sol, &qb_vec);
-	VERBOSE_PRINT_MATRIX(kkt_sol);
+	DEBUG_PRINT_MATRIX(kkt_sol);
 
 	/* copy the optimal solution back to x */
 	for(r = 0; r < qp->x->row; r++) {
@@ -255,7 +253,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
-	VERBOSE_PRINT("quadratic programming inequality constraint phase1 start.\n");
+	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
@@ -355,8 +353,6 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 	qp->phase1.s = -qp->phase1.slack_margin_coeff * fi_max;
 
-	VERBOSE_PRINT("s(0) = %f\n", qp->phase1.s);
-
 	/* most outer loop minimize the s variable */
 	while(qp->phase1.s > qp->phase1.s_stop) {
 		t = qp->phase1.t_init;
@@ -377,7 +373,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 					return QP_PHASE1_INFEASIBLE;
 				}
 
-				VERBOSE_PRINT("iteration %d\n", qp->phase1.iters + 1);
+				DEBUG_PRINT("iteration %d\n", qp->phase1.iters + 1);
 
 				/* preseve last x for checking convergence */
 				matrix_copy(x_last, qp->x);
@@ -431,20 +427,20 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 				qp->phase1.iters++;
 
-				VERBOSE_PRINT_MATRIX(*D1_fi);
-				VERBOSE_PRINT_MATRIX(*D1_fi_t);
-				VERBOSE_PRINT_MATRIX(*D1_fi_D1_fi_t);
-				VERBOSE_PRINT_MATRIX(*D1_phi);
-				VERBOSE_PRINT_MATRIX(*D2_phi);
-				VERBOSE_PRINT_MATRIX(*D2_phi_inv);
-				VERBOSE_PRINT_MATRIX(*newton_step);
-				VERBOSE_PRINT_MATRIX(*qp->x);
-				VERBOSE_PRINT("t = %f\n", t);
-				VERBOSE_PRINT("s = %f\n", qp->phase1.s);
-
 				FLOAT resid =  vector_residual(qp->x, x_last);
-				VERBOSE_PRINT("residual: %f\n", resid);
-				VERBOSE_PRINT("---\n");
+
+				DEBUG_PRINT_MATRIX(*D1_fi);
+				DEBUG_PRINT_MATRIX(*D1_fi_t);
+				DEBUG_PRINT_MATRIX(*D1_fi_D1_fi_t);
+				DEBUG_PRINT_MATRIX(*D1_phi);
+				DEBUG_PRINT_MATRIX(*D2_phi);
+				DEBUG_PRINT_MATRIX(*D2_phi_inv);
+				DEBUG_PRINT_MATRIX(*newton_step);
+				DEBUG_PRINT_MATRIX(*qp->x);
+				DEBUG_PRINT_VAR(t);
+				DEBUG_PRINT_VAR(qp->phase1.s);
+				DEBUG_PRINT_VAR(resid);
+				DEBUG_PRINT("---\n");
 
 				/* exit if already converged */
 				if(resid < qp->eps) {
@@ -478,17 +474,18 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
-	VERBOSE_PRINT("identify qudratic programming problem with inequality "
-	              "constraint\n");
+	VERBOSE_PRINT("[solver] problem type: inequality constrained QP\n");
 
-#if (ENABLE_INFEASIBLE_START == 1)
+#if (ENABLE_INFEASIBLE_START != 0)
 	int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
 	             solve_upper_bound, solve_affine_inequality);
 
 	if(phase1 == QP_PHASE1_FEASIBLE) {
-		VERBOSE_PRINT("phase1: feasible, start point found.");
+		VERBOSE_PRINT("[solver] phase1 end, feasible start point found\n");
+		VERBOSE_PRINT("[solver] phase2 start\n");
 	} else {
-		VERBOSE_PRINT("phase1: infeasible, abort.");
+		VERBOSE_PRINT("[solver] phase1 end: infeasible problem\n"
+		              "[solver] abort\n");
 		return;
 	}
 #endif
@@ -570,9 +567,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 		}
 	}
 
-	VERBOSE_PRINT_MATRIX(*A_inequality);
-	VERBOSE_PRINT_MATRIX(*b_inequality);
-
 	/* outer loop varies the stiffness of the log barrier functions */
 	while(qp->iters < qp->max_iters) {
 		if(t > qp->t_max) {
@@ -581,7 +575,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 		/* inner loop do the gradient descent */
 		while(qp->iters < qp->max_iters) {
-			VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
+			DEBUG_PRINT("iteration %d\n", qp->iters + 1);
 
 			/* preseve last x for checking convergence */
 			matrix_copy(x_last, qp->x);
@@ -655,20 +649,19 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			//update the optimization variable
 			matrix_add(x_last, newton_step, qp->x);
 
-			VERBOSE_PRINT_MATRIX(*D1_phi);
-			VERBOSE_PRINT_MATRIX(*D2_phi);
-			VERBOSE_PRINT_MATRIX(*D1_f0);
-			VERBOSE_PRINT_MATRIX(*D2_f0);
-			VERBOSE_PRINT_MATRIX(*D2_f0_inv);
-			VERBOSE_PRINT_MATRIX(*newton_step);
-			VERBOSE_PRINT_MATRIX(*qp->x);
-			VERBOSE_PRINT("t = %f\n", t);
-
 			qp->iters++;
-
 			FLOAT resid =  vector_residual(qp->x, x_last);
-			VERBOSE_PRINT("residual: %f\n", resid);
-			VERBOSE_PRINT("---\n");
+
+			DEBUG_PRINT_MATRIX(*D1_phi);
+			DEBUG_PRINT_MATRIX(*D2_phi);
+			DEBUG_PRINT_MATRIX(*D1_f0);
+			DEBUG_PRINT_MATRIX(*D2_f0);
+			DEBUG_PRINT_MATRIX(*D2_f0_inv);
+			DEBUG_PRINT_MATRIX(*newton_step);
+			DEBUG_PRINT_MATRIX(*qp->x);
+			DEBUG_PRINT_VAR(t);
+			DEBUG_PRINT_VAR(resid);
+			DEBUG_PRINT("---\n");
 
 			/* exit if already converged */
 			if(resid < qp->eps) {
@@ -699,8 +692,7 @@ static void qp_equality_inequality_constraint_problem_phase1(qp_t *qp, bool solv
 static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
-	VERBOSE_PRINT("identify qudratic programming problem with equality "
-	              "and inequality constraints\n");
+	VERBOSE_PRINT("[solver] problem type: equality and inequality constrained QP\n");
 
 	qp_equality_inequality_constraint_problem_phase1(qp, solve_lower_bound,
 	        solve_upper_bound, solve_affine_inequality);
@@ -871,7 +863,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 		/* inner loop do the gradient descent */
 		while(qp->iters < qp->max_iters) {
-			VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
+			DEBUG_PRINT("iteration %d\n", qp->iters + 1);
 
 			/* preseve last x and z variable */
 			matrix_copy(z_last, z_now);
@@ -955,28 +947,28 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_multiply(F, z_now, qp->x);
 			matrix_add_by(qp->x, x_hat);
 
-			VERBOSE_PRINT_MATRIX(*Q);
-			VERBOSE_PRINT_MATRIX(*R);
-			VERBOSE_PRINT_MATRIX(*F);
-			VERBOSE_PRINT_MATRIX(*F_t);
-			VERBOSE_PRINT_MATRIX(*x_hat);
-			VERBOSE_PRINT_MATRIX(*D1_f0);
-			VERBOSE_PRINT_MATRIX(*D2_f0);
-			VERBOSE_PRINT_MATRIX(*D1_phi);
-			VERBOSE_PRINT_MATRIX(*D2_phi);
-			VERBOSE_PRINT_MATRIX(*D1_f_tilde);
-			VERBOSE_PRINT_MATRIX(*D2_f_tilde);
-			VERBOSE_PRINT_MATRIX(*D2_f_tilde_inv);
-			VERBOSE_PRINT_MATRIX(*newton_step);
-			VERBOSE_PRINT_MATRIX(*z_now);
-			VERBOSE_PRINT_MATRIX(*qp->x);
-			VERBOSE_PRINT("t = %f\n", t);
-
 			qp->iters++;
 
 			FLOAT resid = vector_residual(qp->x, x_last);
-			VERBOSE_PRINT("residual: %f\n", resid);
-			VERBOSE_PRINT("---\n");
+
+			DEBUG_PRINT_MATRIX(*Q);
+			DEBUG_PRINT_MATRIX(*R);
+			DEBUG_PRINT_MATRIX(*F);
+			DEBUG_PRINT_MATRIX(*F_t);
+			DEBUG_PRINT_MATRIX(*x_hat);
+			DEBUG_PRINT_MATRIX(*D1_f0);
+			DEBUG_PRINT_MATRIX(*D2_f0);
+			DEBUG_PRINT_MATRIX(*D1_phi);
+			DEBUG_PRINT_MATRIX(*D2_phi);
+			DEBUG_PRINT_MATRIX(*D1_f_tilde);
+			DEBUG_PRINT_MATRIX(*D2_f_tilde);
+			DEBUG_PRINT_MATRIX(*D2_f_tilde_inv);
+			DEBUG_PRINT_MATRIX(*newton_step);
+			DEBUG_PRINT_MATRIX(*z_now);
+			DEBUG_PRINT_MATRIX(*qp->x);
+			DEBUG_PRINT_VAR(t);
+			DEBUG_PRINT_VAR(resid);
+			DEBUG_PRINT("---\n");
 
 			/* exit if already converged */
 			if(resid < qp->eps || qp->iters == qp->max_iters) {

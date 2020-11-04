@@ -4,12 +4,20 @@
 #include <stdbool.h>
 #include "matrix.h"
 
-#if VERBOSE == 0
+#if VERBOSE_MESSAGE == 0
 #define VERBOSE_PRINT(...)
-#define VERBOSE_PRINT_MATRIX(...)
 #else
 #define VERBOSE_PRINT(...) printf(__VA_ARGS__)
-#define VERBOSE_PRINT_MATRIX PRINT_MATRIX
+#endif
+
+#if DEBUG_MESSAGE == 0
+#define DEBUG_PRINT_MATRIX(...)
+#define DEBUG_PRINT_VAR(...)
+#define DEBUG_PRINT(...)
+#else
+#define DEBUG_PRINT_MATRIX PRINT_MATRIX
+#define DEBUG_PRINT_VAR PRINT_VAR
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #endif
 
 enum {

@@ -9,6 +9,7 @@
 #define matrix_at(mat_ptr, r, c) (mat_ptr)->data[((r) * (mat_ptr)->column) + (c)]
 
 #define PRINT_MATRIX(mat) print_matrix(#mat, &mat)
+#define PRINT_VAR(var) print_var(#var, var)
 
 typedef struct {
 	FLOAT *data;
@@ -43,5 +44,6 @@ void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret);
 FLOAT vector_residual(vector_t *vec1, vector_t *vec2);
 
 void print_matrix(char *prompt, matrix_t *mat);
+void print_var(char *prompt, FLOAT var);
 
 #endif

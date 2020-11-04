@@ -229,3 +229,8 @@ void print_matrix(char *prompt, matrix_t *mat)
 		printf("\n");
 	}
 }
+
+void print_var(char *prompt, FLOAT var)
+{
+	printf("%s (1x1) = \n   %f\n", prompt, var);
+}
