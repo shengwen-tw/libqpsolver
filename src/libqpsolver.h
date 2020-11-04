@@ -4,7 +4,7 @@
 /*======================================*
  * enable internal debug message output *
  *======================================*/
-#define VERBOSE 0
+#define VERBOSE 1
 
 /*====================================*
  * floating-point data type precision *
@@ -13,10 +13,15 @@
 #define USE_DOUBLE 1
 #define FLOAT_PRECISION USE_FLOAT
 
+/*===========================================*
+ * enable infeasible start (phase1) function *
+ *===========================================*/
+#define ENABLE_INFEASIBLE_START 1
+
 /*======================================================*
  * enable matrix/vector dimension check (for debugging) *
  *======================================================*/
-#define ENABLE_DIMENSION_CHECK        0
+#define ENABLE_DIMENSION_CHECK  0
 
 /*=======================================================*
  * select lapack/cblas helper function according to the  *

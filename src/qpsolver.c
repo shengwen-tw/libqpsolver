@@ -16,8 +16,18 @@ void qp_set_default(qp_t *qp)
 	qp->A = NULL;
 	qp->b = NULL;
 
-	qp->iters = 0;
+	/* parameters of phase1 (feasibilty) solver */
+	qp->phase1.max_iters = 10000;
+	qp->phase1.iters = 0;
+	qp->phase1.s_descent_rate = 0.8;
+	qp->phase1.slack_margin_coeff = 3;
+	qp->phase1.s_stop = 1e-6;
+	qp->phase1.t_init = 0.01;
+	qp->phase1.t_max = 1000;
+	qp->phase1.mu = 1.5;
 
+	/* parameters of phase2 (quadratic programming) solver */
+	qp->iters = 0;
 	qp->eps = 1e-6;         //residual value to stop the gradient descent inner loop
 	qp->mu = 1.5;           //stiffness growth rate of the log barrier function
 	qp->t_init = 0.01;      //initial stiffness of the log barrier
@@ -247,19 +257,10 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 {
 	VERBOSE_PRINT("quadratic programming inequality constraint phase1 start.\n");
 
-	int phase1_max_iters = 10000; //XXX
-	int phase1_iters = 0; //XXX
-
-	FLOAT s_descent_rate = 0.9; //XXX
-
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
 	int i, j;
-
-	FLOAT slack_margin_coeff = 10; //XXX
-	FLOAT s;
-	FLOAT s_end_size = 1e-8; //XXX
 
 	FLOAT t;
 
@@ -352,31 +353,31 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 		}
 	}
 
-	s = -slack_margin_coeff * fi_max;
+	qp->phase1.s = -qp->phase1.slack_margin_coeff * fi_max;
 
-	VERBOSE_PRINT("s(0) = %f\n", s);
+	VERBOSE_PRINT("s(0) = %f\n", qp->phase1.s);
 
 	/* most outer loop minimize the s variable */
-	while(s > s_end_size) {
-		t = qp->t_init;
+	while(qp->phase1.s > qp->phase1.s_stop) {
+		t = qp->phase1.t_init;
 
 		/* middle loop varies the stiffness of the log barrier functions */
 		while(1) {
-			if(phase1_iters >= phase1_max_iters) {
+			if(qp->phase1.iters >= qp->phase1.max_iters) {
 				return QP_PHASE1_INFEASIBLE;
 			}
 
-			if(t > qp->t_max) {
+			if(t > qp->phase1.t_max) {
 				break;
 			}
 
 			/* inner loop do the gradient descent */
 			while(1) {
-				if(phase1_iters >= phase1_max_iters) {
+				if(qp->phase1.iters >= qp->phase1.max_iters) {
 					return QP_PHASE1_INFEASIBLE;
 				}
 
-				VERBOSE_PRINT("iteration %d\n", qp->iters + 1);
+				VERBOSE_PRINT("iteration %d\n", qp->phase1.iters + 1);
 
 				/* preseve last x for checking convergence */
 				matrix_copy(x_last, qp->x);
@@ -391,7 +392,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 					for(j = 0; j < A_inequality->column; j++) {
 						fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
 					}
-					fi = fi - matrix_at(b_inequality, r, 0) - s;
+					fi = fi - matrix_at(b_inequality, r, 0) - qp->phase1.s;
 					div_fi = -1 / (fi + epsilon);
 					div_fi_squared = 1 / ((fi * fi) + epsilon);
 
@@ -428,7 +429,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 				/* update the optimization variable */
 				matrix_add(x_last, newton_step, qp->x);
 
-				phase1_iters++;
+				qp->phase1.iters++;
 
 				VERBOSE_PRINT_MATRIX(*D1_fi);
 				VERBOSE_PRINT_MATRIX(*D1_fi_t);
@@ -437,8 +438,9 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 				VERBOSE_PRINT_MATRIX(*D2_phi);
 				VERBOSE_PRINT_MATRIX(*D2_phi_inv);
 				VERBOSE_PRINT_MATRIX(*newton_step);
+				VERBOSE_PRINT_MATRIX(*qp->x);
 				VERBOSE_PRINT("t = %f\n", t);
-				VERBOSE_PRINT("s = %f\n", s);
+				VERBOSE_PRINT("s = %f\n", qp->phase1.s);
 
 				FLOAT resid =  vector_residual(qp->x, x_last);
 				VERBOSE_PRINT("residual: %f\n", resid);
@@ -450,7 +452,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 				}
 			}
 
-			t *= qp->mu;
+			t *= qp->phase1.mu;
 		}
 
 		/* inequality check */
@@ -460,14 +462,14 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 			for(c = 0; c < A_inequality->column; c++) {
 				fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
 			}
-			fi = fi - matrix_at(b_inequality, r, 0) - s;
+			fi = fi - matrix_at(b_inequality, r, 0) - qp->phase1.s;
 
-			if(fi  > s) {
+			if(fi  > 0) {
 				return QP_PHASE1_INFEASIBLE;
 			}
 		}
 
-		s = s * s_descent_rate;
+		qp->phase1.s = qp->phase1.s * qp->phase1.s_descent_rate;
 	}
 
 	return QP_PHASE1_FEASIBLE;
@@ -479,6 +481,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	VERBOSE_PRINT("identify qudratic programming problem with inequality "
 	              "constraint\n");
 
+#if (ENABLE_INFEASIBLE_START == 1)
 	int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
 	             solve_upper_bound, solve_affine_inequality);
 
@@ -488,6 +491,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 		VERBOSE_PRINT("phase1: infeasible, abort.");
 		return;
 	}
+#endif
 
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 

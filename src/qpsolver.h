@@ -26,6 +26,20 @@ enum {
 } QP_PHASE1_RETVAL;
 
 typedef struct {
+	FLOAT s;
+	FLOAT s_descent_rate;
+	FLOAT slack_margin_coeff;
+	FLOAT s_stop;
+
+	FLOAT t_init;
+	FLOAT t_max;
+	FLOAT mu;
+
+	int max_iters;
+	int iters;
+} phase1_param;
+
+typedef struct {
 	/* optimization variable */
 	vector_t *x;
 
@@ -43,6 +57,9 @@ typedef struct {
 	vector_t *ub; //upper bound inequality
 	matrix_t *A;  //affine inequality matrix
 	vector_t *b;  //affine inequality vector
+
+	/* parameter of phase1 solver */
+	phase1_param phase1;
 
 	/* stop criterions */
 	FLOAT eps;
