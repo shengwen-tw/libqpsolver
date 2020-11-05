@@ -389,7 +389,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 					for(j = 0; j < A_inequality->column; j++) {
 						fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
 					}
-					fi = fi - matrix_at(b_inequality, r, 0) - qp->phase1.s;
+					fi = fi - (matrix_at(b_inequality, r, 0) + qp->phase1.s);
 					div_fi = -1 / (fi + epsilon);
 					div_fi_squared = 1 / ((fi * fi) + epsilon);
 
@@ -453,13 +453,13 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 		}
 
 		/* inequality check */
-		for(r = 1; r < b_inequality->row; r++) {
+		for(r = 0; r < b_inequality->row; r++) {
 			/* calculate value of the log barrier function */
 			fi = 0;
 			for(c = 0; c < A_inequality->column; c++) {
 				fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
 			}
-			fi = fi - matrix_at(b_inequality, r, 0) - qp->phase1.s;
+			fi = fi - (matrix_at(b_inequality, r, 0) + qp->phase1.s);
 
 			if(fi  > 0) {
 				return QP_PHASE1_INFEASIBLE;
