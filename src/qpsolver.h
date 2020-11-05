@@ -36,12 +36,14 @@ enum {
 typedef struct {
 	FLOAT s;
 	FLOAT s_descent_rate;
-	FLOAT slack_margin_coeff;
+	FLOAT s_margin;
 	FLOAT s_stop;
 
 	FLOAT t_init;
 	FLOAT t_max;
 	FLOAT mu;
+
+    FLOAT eps;
 
 	int max_iters;
 	int iters;

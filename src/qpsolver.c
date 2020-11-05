@@ -19,8 +19,9 @@ void qp_set_default(qp_t *qp)
 	/* parameters of phase1 (feasibilty) solver */
 	qp->phase1.max_iters = 10000;
 	qp->phase1.iters = 0;
+    qp->phase1.eps = 1e-3;
 	qp->phase1.s_descent_rate = 0.8;
-	qp->phase1.slack_margin_coeff = 3;
+	qp->phase1.s_margin = 100;
 	qp->phase1.s_stop = 1e-6;
 	qp->phase1.t_init = 0.01;
 	qp->phase1.t_max = 1000;
@@ -351,7 +352,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 		}
 	}
 
-	qp->phase1.s = -qp->phase1.slack_margin_coeff * fi_max;
+	qp->phase1.s = fi_max + qp->phase1.s_margin;
 
 	/* most outer loop minimize the s variable */
 	while(qp->phase1.s > qp->phase1.s_stop) {
@@ -443,7 +444,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 				DEBUG_PRINT("---\n");
 
 				/* exit if already converged */
-				if(resid < qp->eps) {
+				if(resid < qp->phase1.eps) {
 					break;
 				}
 			}
