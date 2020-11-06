@@ -19,7 +19,7 @@ void qp_set_default(qp_t *qp)
 	/* parameters of phase1 (feasibilty) solver */
 	qp->phase1.max_iters = 10000;
 	qp->phase1.iters = 0;
-    qp->phase1.eps = 1e-3;
+	qp->phase1.eps = 1e-3;
 	qp->phase1.s_descent_rate = 0.8;
 	qp->phase1.s_margin = 100;
 	qp->phase1.s_stop = 1e-6;
@@ -334,7 +334,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 	/* init value of fi_max */
 	for(j = 0; j < A_inequality->column; j++) {
-		fi += matrix_at(A_inequality, 0, j) * matrix_at(qp->x, j, 0);
+		fi_max += matrix_at(A_inequality, 0, j) * matrix_at(qp->x, j, 0);
 	}
 	fi_max -= matrix_at(b_inequality, 0, 0);
 
