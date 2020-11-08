@@ -43,7 +43,12 @@ typedef struct {
 	FLOAT t_max;
 	FLOAT mu;
 
-	FLOAT eps;
+	FLOAT eps_t;
+	FLOAT eps_s;
+
+	FLOAT delta_x;
+	FLOAT delta_t;
+	FLOAT delta_s;
 
 	int max_iters;
 	int iters;
