@@ -216,6 +216,18 @@ FLOAT vector_residual(vector_t *vec1, vector_t *vec2)
 	return sqrt(sum_of_squared);
 }
 
+FLOAT vector_norm(vector_t *vec)
+{
+	FLOAT sum_of_squared = 0;
+
+	int r;
+	for(r = 0; r < vec->row; r++) {
+		sum_of_squared += (matrix_at(vec, r, 0) * matrix_at(vec, r, 0));
+	}
+
+	return sqrt(sum_of_squared);
+}
+
 void print_matrix(char *prompt, matrix_t *mat)
 {
 	printf("%s (%dx%d) = \n", prompt, mat->row, mat->column);

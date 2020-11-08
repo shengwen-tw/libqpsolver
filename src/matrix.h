@@ -42,6 +42,7 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
 void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret);
 
 FLOAT vector_residual(vector_t *vec1, vector_t *vec2);
+FLOAT vector_norm(vector_t *vec);
 
 void print_matrix(char *prompt, matrix_t *mat);
 void print_var(char *prompt, FLOAT var);

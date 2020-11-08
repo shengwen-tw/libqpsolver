@@ -47,8 +47,6 @@ typedef struct {
 	FLOAT eps_s;
 
 	FLOAT delta_x;
-	FLOAT delta_t;
-	FLOAT delta_s;
 
 	int max_iters;
 	int iters;

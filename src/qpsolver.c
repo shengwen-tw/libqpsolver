@@ -22,12 +22,11 @@ void qp_set_default(qp_t *qp)
 	qp->phase1.eps_s = 1e-3;
 	qp->phase1.eps_t = 1e-3;
 	qp->phase1.s_descent_rate = 0.8;
-	qp->phase1.s_margin = 100;
+	qp->phase1.s_margin = 1;
 	qp->phase1.s_stop = 1e-6;
 	qp->phase1.t_init = 0.01;
 	qp->phase1.t_max = 1000;
 	qp->phase1.delta_x = 0.1;
-	qp->phase1.delta_t = 1;
 	qp->phase1.mu = 1.5;
 
 	/* parameters of phase2 (quadratic programming) solver */
@@ -272,10 +271,6 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 	//first derivative of the i-th inequality constraint function
 	matrix_t *D1_fi = matrix_zeros(qp->x->row, qp->x->column);
-	//transposed first derivative of the i-th inequality constraint function
-	matrix_t *D1_fi_t = matrix_zeros(qp->x->column, qp->x->row);
-	//D[fi(x)] * D[fi(x)].'
-	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
 
 	//first derivative of the sumation of log barrier functions
 	matrix_t *D1_phi = matrix_new(qp->x->row, qp->x->column);
@@ -325,19 +320,11 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 		}
 	}
 
-	/*============================================*
-	 * initialize the inequality slack variable s *
-	 *============================================*/
-	float fi_max = 0;
+	/* initialize the slack variables */
+	matrix_t *s = matrix_new(b_inequality->row, 1);
+	matrix_t *s_last = matrix_new(b_inequality->row, 1);
 
-	/* init value of fi_max */
-	for(j = 0; j < A_inequality->column; j++) {
-		fi_max += matrix_at(A_inequality, 0, j) * matrix_at(qp->x, j, 0);
-	}
-	fi_max -= matrix_at(b_inequality, 0, 0);
-
-	/* search for the largest fi_max */
-	for(r = 1; r < b_inequality->row; r++) {
+	for(r = 0; r < b_inequality->row; r++) {
 		/* calculate value of the log barrier function */
 		fi = 0;
 		for(c = 0; c < A_inequality->column; c++) {
@@ -345,15 +332,20 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 		}
 		fi -= matrix_at(b_inequality, r, 0);
 
-		if(fi > fi_max) {
-			fi_max = fi;
-		}
+		matrix_at(s, r, 0) = fi + qp->phase1.s_margin;
 	}
 
-	qp->phase1.s = fi_max + qp->phase1.s_margin;
+	DEBUG_PRINT_MATRIX(*s);
+
+	FLOAT s_norm;
 
 	/* most outer loop minimize the s variable */
-	while(qp->phase1.s > qp->phase1.s_stop) {
+	while(1) {
+		s_norm = vector_norm(s);
+		if(s_norm < qp->phase1.s_stop) {
+			break;
+		}
+
 		t = qp->phase1.t_init;
 
 		/* middle loop varies the stiffness of the log barrier functions */
@@ -381,7 +373,7 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 				/* calculate first and second derivative of log barriers */
 				for(r = 0; r < A_inequality->row; r++) {
-					/* calculate value of the log barrier function */
+					/* calculate value of the inequality function */
 					fi = 0;
 					for(j = 0; j < A_inequality->column; j++) {
 						fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
@@ -402,30 +394,54 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 				FLOAT div_by_t = 1 / t;
 				matrix_scale_by(div_by_t, D1_phi);
 
-				/* calculate the newton step */
-				matrix_scaling(qp->phase1.delta_x, D1_phi, newton_step);
-				matrix_scale_by(-1, newton_step);
+				FLOAT gamma = 1;
+				while(1) {
+					bool schrink_x_step_size = false;
 
-				/* update the optimization variable */
-				matrix_add(x_last, newton_step, qp->x);
+					/* calculate the newton step */
+					matrix_scaling(qp->phase1.delta_x, D1_phi, newton_step);
+					matrix_scale_by(-1 * gamma, newton_step);
+
+					/* update the optimization variable */
+					matrix_add(x_last, newton_step, qp->x);
+
+					/* inequality check */
+					for(r = 0; r < s->row; r++) {
+						fi = 0;
+						for(c = 0; c < A_inequality->column; c++) {
+							fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
+						}
+						fi = fi - matrix_at(b_inequality, r, 0) - matrix_at(s, r, 0);
+
+						if(fi > 0) {
+							schrink_x_step_size = true;
+							break;
+						}
+					}
+
+					if(schrink_x_step_size == true) {
+						gamma *= 0.95;
+					} else {
+						break;
+					}
+				}
 
 				qp->phase1.iters++;
 
-				FLOAT resid =  vector_residual(qp->x, x_last);
+				FLOAT resid_x = vector_residual(qp->x, x_last);
 
 				DEBUG_PRINT_MATRIX(*D1_fi);
-				DEBUG_PRINT_MATRIX(*D1_fi_t);
-				DEBUG_PRINT_MATRIX(*D1_fi_D1_fi_t);
 				DEBUG_PRINT_MATRIX(*D1_phi);
 				DEBUG_PRINT_MATRIX(*newton_step);
 				DEBUG_PRINT_MATRIX(*qp->x);
+				DEBUG_PRINT_MATRIX(*s);
 				DEBUG_PRINT_VAR(t);
-				DEBUG_PRINT_VAR(qp->phase1.s);
-				DEBUG_PRINT_VAR(resid);
+				DEBUG_PRINT_VAR(s_norm);
+				DEBUG_PRINT_VAR(resid_x);
 				DEBUG_PRINT("---\n");
 
 				/* exit if already converged */
-				if(resid < qp->phase1.eps_t) {
+				if(resid_x < qp->phase1.eps_t) {
 					break;
 				}
 			}
@@ -433,21 +449,38 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 			t *= qp->phase1.mu;
 		}
 
-		/* inequality check */
-		for(r = 0; r < b_inequality->row; r++) {
-			/* calculate value of the log barrier function */
-			fi = 0;
-			for(c = 0; c < A_inequality->column; c++) {
-				fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
-			}
-			fi = fi - (matrix_at(b_inequality, r, 0) + qp->phase1.s);
+		matrix_copy(s_last, s);
 
-			if(fi  > 0) {
-				return QP_PHASE1_INFEASIBLE;
+		/* minimize s */
+		for(r = 0; r < s->row; r++) {
+			FLOAT delta_s = matrix_at(s, r, 0);
+
+			while(1) {
+				/* gradient descent */
+				matrix_at(s, r, 0) =
+				    matrix_at(s_last, r, 0) - delta_s;
+
+				/* inequality check */
+				fi = 0;
+				for(c = 0; c < A_inequality->column; c++) {
+					fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
+				}
+				fi = fi - matrix_at(b_inequality, r, 0) - matrix_at(s, r, 0);
+
+				/* inequality constraint breaked, schrink the step size */
+				if(fi  > 0) {
+					delta_s *= 0.95; //XXX
+				} else {
+					break;
+				}
 			}
 		}
 
-		qp->phase1.s = qp->phase1.s * qp->phase1.s_descent_rate;
+		FLOAT resid_s = vector_residual(s, s_last);
+		if(resid_s < qp->phase1.eps_s) {
+			DEBUG_PRINT("s converged\n");
+			return QP_PHASE1_INFEASIBLE;
+		}
 	}
 
 	return QP_PHASE1_FEASIBLE;
