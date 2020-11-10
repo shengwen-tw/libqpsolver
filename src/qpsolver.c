@@ -449,16 +449,20 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	VERBOSE_PRINT("[solver] problem type: inequality constrained QP\n");
 
 #if (ENABLE_INFEASIBLE_START != 0)
-	int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
-	             solve_upper_bound, solve_affine_inequality);
+	bool feasible = qp_start_point_feasibility_check(qp);
 
-	if(phase1 == QP_PHASE1_FEASIBLE) {
-		VERBOSE_PRINT("[solver] phase1 end, feasible start point found\n");
-		VERBOSE_PRINT("[solver] phase2 start\n");
-	} else {
-		VERBOSE_PRINT("[solver] phase1 end: infeasible problem\n"
-		              "[solver] abort\n");
-		return;
+	if(feasible == false) {
+		int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
+		             solve_upper_bound, solve_affine_inequality);
+
+		if(phase1 == QP_PHASE1_FEASIBLE) {
+			VERBOSE_PRINT("[solver] phase1 end, feasible start point found\n");
+			VERBOSE_PRINT("[solver] phase2 start\n");
+		} else {
+			VERBOSE_PRINT("[solver] phase1 end: infeasible problem\n"
+			              "[solver] abort\n");
+			return;
+		}
 	}
 #endif
 
