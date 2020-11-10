@@ -68,7 +68,7 @@ int main(void)
 	/* problem setup */
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
-	qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
+	//qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
 	qp_solve_set_lower_bound_inequality_constraints(&qp, &lb);
 	qp_solve_set_upper_bound_inequality_constraints(&qp, &ub);
 	qp_solve_set_affine_inequality_constraints(&qp, &A, &b);
@@ -91,8 +91,9 @@ int main(void)
 	PRINT_MATRIX(x);
 
 	printf("run time: %lf seconds\n"
-	       "optimization took %d iterations\n",
-	       end_time - start_time, qp.iters + 1);
+	       "phase1 stage took %d iterations\n"
+	       "phase2 stage took %d iterations\n",
+	       end_time - start_time, qp.phase1.iters, qp.iters + 1);
 
 	return 0;
 }
