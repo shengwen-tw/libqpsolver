@@ -34,19 +34,16 @@ enum {
 } QP_PHASE1_RETVAL;
 
 typedef struct {
-	FLOAT s;
-	FLOAT s_descent_rate;
 	FLOAT s_margin;
-	FLOAT s_stop;
+	FLOAT beta;
 
 	FLOAT t_init;
 	FLOAT t_max;
 	FLOAT mu;
 
-	FLOAT eps_t;
-	FLOAT eps_s;
+	FLOAT eps;
 
-	FLOAT delta_x;
+	FLOAT step_size;
 
 	int max_iters;
 	int iters;
