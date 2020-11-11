@@ -19,13 +19,13 @@ void qp_set_default(qp_t *qp)
 	/* parameters of phase1 (feasibilty) solver */
 	qp->phase1.max_iters = 10000;
 	qp->phase1.iters = 0;
-	qp->phase1.eps = 1e-3;
+	qp->phase1.eps = 1e-5;
 	qp->phase1.s_margin = 10;
 	qp->phase1.beta = -0.1;
 	qp->phase1.t_init = 0.05;
-	qp->phase1.t_max = 100;
-	qp->phase1.mu = 3;
-	qp->phase1.backtracking_alpha = 0.3;
+	qp->phase1.t_max = 1000;
+	qp->phase1.mu = 2.0;
+	qp->phase1.backtracking_alpha = 0.25;
 	qp->phase1.backtracking_beta = 0.9;
 	//qp->phase1.step_size = 0.1;
 
@@ -537,8 +537,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 		}
 	}
 #endif
-
-	return;
 
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
