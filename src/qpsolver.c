@@ -277,12 +277,9 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_zeros(qp->x->row + 1, qp->x->column);
 
-	//first derivative of the i-th inequality constraint function
-	matrix_t *D1_fi = matrix_zeros(qp->x->row + 1, qp->x->column);
-
 	//first derivative of the sumation of log barrier functions
 	matrix_t *D1_phi_x = matrix_new(qp->x->row + 1, qp->x->column);
-	matrix_t *D1_phi_s = matrix_new(qp->x->row + 1, qp->x->column);
+	matrix_t *D1_phi_s = matrix_zeros(qp->x->row + 1, qp->x->column);
 
 	/* i-th inenquality constraint function */
 	FLOAT fi = 0;
@@ -374,7 +371,6 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 
 			matrix_reset_zeros(D1_f0);
 			matrix_reset_zeros(D1_phi_x);
-			matrix_reset_zeros(D1_phi_s);
 
 			/* first derivative of the objective function */
 			matrix_at(D1_f0, x_prime->row-1, 0) = 1;
@@ -398,9 +394,8 @@ static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bo
 			}
 
 			/* first derivative of s's inequality constraint */
-			matrix_reset_zeros(D1_fi);
-			fi = -matrix_at(x_prime, x_prime->row-1, 0) + qp->phase1.beta;
-			div_fi = 1.0 / (fi + epsilon); //XXX: minus sign?
+			fi = matrix_at(x_prime, x_prime->row-1, 0) - qp->phase1.beta;
+			div_fi = -1.0 / (fi + epsilon);
 			matrix_at(D1_phi_s, qp->x->row, 0) = div_by_t * div_fi;
 
 			/* combine first derivative of objective function and log barriers */
