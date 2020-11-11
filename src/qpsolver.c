@@ -25,7 +25,7 @@ void qp_set_default(qp_t *qp)
 	qp->phase1.t_init = 0.05;
 	qp->phase1.t_max = 1000;
 	qp->phase1.step_size = 0.1;
-	qp->phase1.mu = 1.2;
+	qp->phase1.mu = 3.0;
 	qp->phase1.backtracking_alpha = 0.25;
 	qp->phase1.backtracking_beta = 0.9;
 
