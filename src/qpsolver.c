@@ -396,6 +396,10 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 			break;
 		}
 
+        if(matrix_at(x_prime, qp->x->row, 0) < 0) {
+            break;
+        }
+
 		div_by_t = 1 / t;
 		while(qp->phase1.iters < qp->phase1.max_iters) {
 			DEBUG_PRINT("iteration %d\n", qp->phase1.iters + 1);
