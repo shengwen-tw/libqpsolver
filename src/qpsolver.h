@@ -34,17 +34,24 @@ enum {
 } QP_PHASE1_RETVAL;
 
 typedef struct {
+	/* slack variable parameters for feasibility problem */
 	FLOAT s_margin;
 	FLOAT beta;
 
+	/* log barrier parameters*/
 	FLOAT t_init;
 	FLOAT t_max;
 	FLOAT mu;
 
-	FLOAT eps;
-
+	/* gradient descent */
 	FLOAT step_size;
 
+	/* backtracking line search parameters*/
+	FLOAT backtracking_alpha;
+	FLOAT backtracking_beta;
+
+	/* stop criterions */
+	FLOAT eps;
 	int max_iters;
 	int iters;
 } phase1_param;
