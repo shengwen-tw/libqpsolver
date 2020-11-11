@@ -251,7 +251,38 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	free(qb_vec.data);
 }
 
-static int qp_inequality_constraint_problem_phase1(qp_t *qp, bool solve_lower_bound,
+/*static*/ FLOAT qp_phase1_cost_function(FLOAT t, matrix_t *x_prime,
+        matrix_t *A_inequality, matrix_t* b_inequality, FLOAT beta)
+{
+	int r, c;
+
+	FLOAT f, fi;
+	FLOAT div_by_t = 1.0f / t;
+
+	/* cost of slack variable s */
+	f = matrix_at(x_prime, x_prime->row - 1, 0);
+
+	/* cost of log barrier functions for x */
+	for(r = 0; r < (A_inequality->row - 1); r++) {
+		/* calculate value of the inequality functions */
+		fi = 0;
+		for(c = 0; c < (A_inequality->column - 1); c++) {
+			fi += matrix_at(A_inequality, r, c) * matrix_at(x_prime, c, 0);
+		}
+		fi = fi - matrix_at(b_inequality, r, 0) -
+		     matrix_at(x_prime, x_prime->row-1, 0);
+
+		f -= div_by_t * log(-fi);
+	}
+
+	/* cost of log barrier function for s */
+	fi = -matrix_at(x_prime, x_prime->row - 1, 0) + beta;
+	f -= div_by_t * log(-fi);
+
+	return f;
+}
+
+static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
         bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
@@ -447,7 +478,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	bool feasible = qp_start_point_feasibility_check(qp);
 
 	if(feasible == false) {
-		int phase1 = qp_inequality_constraint_problem_phase1(qp, solve_lower_bound,
+		int phase1 = qp_inequality_constraint_phase1(qp, solve_lower_bound,
 		             solve_upper_bound, solve_affine_inequality);
 
 		if(phase1 == QP_PHASE1_FEASIBLE) {
