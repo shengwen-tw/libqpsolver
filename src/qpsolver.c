@@ -17,17 +17,17 @@ void qp_set_default(qp_t *qp)
 	qp->b = NULL;
 
 	/* parameters of phase1 (feasibilty) solver */
-	qp->phase1.max_iters = 50000;
+	qp->phase1.max_iters = 10000;
 	qp->phase1.iters = 0;
 	qp->phase1.eps = 1e-3;
 	qp->phase1.s_margin = 10;
 	qp->phase1.beta = -0.1;
 	qp->phase1.t_init = 0.05;
-	qp->phase1.t_max = 1000;
-	qp->phase1.step_size = 0.1;
-	qp->phase1.mu = 3.0;
-	qp->phase1.backtracking_alpha = 0.25;
+	qp->phase1.t_max = 100;
+	qp->phase1.mu = 3;
+	qp->phase1.backtracking_alpha = 0.3;
 	qp->phase1.backtracking_beta = 0.9;
+	//qp->phase1.step_size = 0.1;
 
 	/* parameters of phase2 (quadratic programming) solver */
 	qp->iters = 0;
@@ -396,9 +396,9 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 			break;
 		}
 
-        if(matrix_at(x_prime, qp->x->row, 0) < 0) {
-            break;
-        }
+		if(matrix_at(x_prime, qp->x->row, 0) < 0) {
+			break;
+		}
 
 		div_by_t = 1 / t;
 		while(qp->phase1.iters < qp->phase1.max_iters) {
@@ -443,27 +443,26 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 			 * gradient descent with backtracking line search *
 			 *================================================*/
 
-#if 0
 			/* initialization of backtracking line search */
 			FLOAT backtracking_t = 1.0f;
 			FLOAT bt_cost_now;
 
 			//f(x)
-			FLOAT bt_cost_origin =
-			    qp_phase1_cost_function(t, x_prime, A_inequality,
-			                            b_inequality, qp->phase1.beta);
-
+			FLOAT bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
+			                       b_inequality, qp->phase1.beta);
+			//f(x) + (a * t * D1_f(x).' * D1_f(x))
 			FLOAT bt_cost_alpha_line = 0;
+			//(a * t * D1_f(x).' * D1_f(x))
+			FLOAT alpha_line_change = 0;
 
 			/* backtracking line search loop */
 			while(1) {
-				bt_cost_alpha_line = 0;
+				alpha_line_change = 0;
 				for(r = 0; r < x_prime->row; r++) {
-					bt_cost_alpha_line += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
+					alpha_line_change += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
 				}
-				bt_cost_alpha_line *= qp->phase1.backtracking_alpha * backtracking_t;
-				bt_cost_alpha_line += bt_cost_origin;
-				bt_cost_alpha_line *= -1.0;
+				alpha_line_change *= qp->phase1.backtracking_alpha * backtracking_t;
+				bt_cost_alpha_line = bt_cost_origin - alpha_line_change;
 
 				matrix_scaling(-backtracking_t, D1_f0, descent_step);
 				matrix_add(x_prime_last, descent_step, x_prime);
@@ -471,18 +470,18 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 				    qp_phase1_cost_function(t, x_prime, A_inequality,
 				                            b_inequality, qp->phase1.beta);
 
-				if(bt_cost_now < bt_cost_alpha_line) {
-					DEBUG_PRINT("nice\n");
+				if(bt_cost_now <= bt_cost_alpha_line) {
 					break;
 				}
 
 				backtracking_t *= qp->phase1.backtracking_beta;
 			}
-#else
-			/* gradient descent without backtracking line search */
-			matrix_scaling(-qp->phase1.step_size, D1_f0, descent_step);
-			matrix_add(x_prime_last, descent_step, x_prime);
-#endif
+
+			/*===================================================*
+			 * gradient descent without backtracking line search *
+			 *===================================================*/
+			//matrix_scaling(-qp->phase1.step_size, D1_f0, descent_step);
+			//matrix_add(x_prime_last, descent_step, x_prime);
 
 			qp->phase1.iters++;
 
