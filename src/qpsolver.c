@@ -170,87 +170,73 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	/* construct the [-q; b] matrix */
 	int qb_vec_row = qp->q->row + qp->b_eq->row;
 	int qb_vec_column = 1;
-	FLOAT *qb_vec_data = (FLOAT *)malloc(sizeof(FLOAT) * qb_vec_row * qb_vec_column);
-	vector_t qb_vec = {
-		.data = qb_vec_data,
-		.row = qb_vec_row,
-		.column = qb_vec_column
-	};
+	matrix_t *qb_vec = matrix_new(qb_vec_row, qb_vec_column);
 
 	//copy -q
 	for(r = 0; r < qp->q->row; r++) {
 		//copy -q
-		matrix_at(&qb_vec, r, 0) = -matrix_at(qp->q, r, 0);
+		matrix_at(qb_vec, r, 0) = -matrix_at(qp->q, r, 0);
 	}
 	//copy b
 	for(r = 0; r < qp->b_eq->row; r++) {
 		//copy b
-		matrix_at(&qb_vec, r + qp->q->row, 0) =
+		matrix_at(qb_vec, r + qp->q->row, 0) =
 		    matrix_at(qp->b_eq, r, 0);
 	}
-	DEBUG_PRINT_MATRIX(qb_vec);
 
 	/* construct the KKT matrix */
 	int kkt_row = qp->P->row + qp->A_eq->row;
 	int kkt_column = qp->P->column + qp->A_eq->row;
-	FLOAT *KKT_data = (FLOAT *)calloc(kkt_row * kkt_column, sizeof(FLOAT));
-	matrix_t KKT = {
-		.data = KKT_data,
-		.row = kkt_row,
-		.column = kkt_column
-	};
+	matrix_t * KKT = matrix_zeros(kkt_row, kkt_column);
 
 	//copy P
 	for(r = 0; r < qp->P->row; r++) {
 		for(c = 0; c < qp->P->column; c++) {
-			matrix_at(&KKT, r, c) = matrix_at(qp->P, r, c);
+			matrix_at(KKT, r, c) = matrix_at(qp->P, r, c);
 		}
 	}
 	//copy A.'
 	for(r = 0; r < qp->A_eq->column; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
-			matrix_at(&KKT, r, (c + qp->A_eq->column)) =
+			matrix_at(KKT, r, (c + qp->A_eq->column)) =
 			    matrix_at(qp->A_eq, c, r);
 		}
 	}
 	//copy A
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->column; c++) {
-			matrix_at(&KKT, (r + qp->P->row), c) =
+			matrix_at(KKT, (r + qp->P->row), c) =
 			    matrix_at(qp->A_eq, r, c);
 		}
 	}
 	//set zero matrix
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
-			matrix_at(&KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
+			matrix_at(KKT, (r + qp->P->row), (c + qp->A_eq->column)) = 0;
 		}
 	}
-	DEBUG_PRINT_MATRIX(KKT);
 
 	/* construct kkt solution vector */
 	int kkt_sol_row = qp->x->row + qp->b_eq->row;
 	int kkt_sol_column = 1;
-	FLOAT *kkt_sol_data = (FLOAT *)malloc(sizeof(FLOAT) * kkt_sol_row * kkt_sol_column);
-	vector_t kkt_sol = {
-		.data = kkt_sol_data,
-		.row = kkt_sol_row,
-		.column = kkt_sol_column
-	};
+	matrix_t *kkt_sol = matrix_new(kkt_sol_row, kkt_sol_column);
 
 	/* solve the KKT system */
-	solve_linear_system(&KKT, &kkt_sol, &qb_vec);
-	DEBUG_PRINT_MATRIX(kkt_sol);
+	solve_linear_system(KKT, kkt_sol, qb_vec);
 
 	/* copy the optimal solution back to x */
 	for(r = 0; r < qp->x->row; r++) {
-		matrix_at(qp->x, r, 0) = matrix_at(&kkt_sol, r, 0);
+		matrix_at(qp->x, r, 0) = matrix_at(kkt_sol, r, 0);
 	}
 
+	DEBUG_PRINT_MATRIX(*qb_vec);
+	DEBUG_PRINT_MATRIX(*KKT);
+	DEBUG_PRINT_MATRIX(*kkt_sol);
+
 	/* free mallocs */
-	free(KKT.data);
-	free(kkt_sol.data);
-	free(qb_vec.data);
+	matrix_delete(KKT);
+	matrix_delete(KKT);
+	matrix_delete(qb_vec);
 }
 
 static FLOAT qp_phase1_cost_function(FLOAT t, matrix_t *x_prime,
@@ -552,7 +538,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 		matrix_at(qp->x, r, 0) = matrix_at(x_prime, r, 0);
 	}
 
-    int ret_val;
+	int ret_val;
 
 	//if s <= 0 then the problem is feasible
 	if(matrix_at(x_prime, x_prime->row-1, 0) < 0) {
@@ -564,13 +550,13 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	matrix_delete(x_prime);
 	matrix_delete(x_prime_last);
 	matrix_delete(D1_f0);
-	matrix_delete(D1_phi_x); 
+	matrix_delete(D1_phi_x);
 	matrix_delete(D1_phi_s);
 	matrix_delete(descent_step);
 	matrix_delete(A_inequality);
 	matrix_delete(b_inequality);
 
-    return ret_val;
+	return ret_val;
 }
 
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
