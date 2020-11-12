@@ -1221,18 +1221,15 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	 * solve the problem with new optimization variable z in the null space of A_eq *
 	 *==============================================================================*/
 
-	matrix_t *x_hat = matrix_zeros(qp->x->row, qp->x->column);
-
 	//new optimization variable z
 	matrix_t *z_now = matrix_zeros(qp->x->row, qp->x->column);
 	matrix_t *z_last = matrix_zeros(qp->x->row, qp->x->column);
 
-	//x = Fx + x_hat
+	//x = Fx
 	matrix_t *x_last = matrix_zeros(qp->x->row, qp->x->column);
 
 	//initialize x with z
 	matrix_multiply(F, z_now, qp->x);
-	matrix_add_by(qp->x, x_hat);
 
 	//first derivative of the equality constraints eliminated objective function
 	matrix_t *D1_f_tilde = matrix_new(qp->x->row, qp->x->column);
@@ -1375,7 +1372,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
-			matrix_add_by(qp->x, x_hat);
 
 			qp->iters++;
 
@@ -1385,7 +1381,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			DEBUG_PRINT_MATRIX(*R);
 			DEBUG_PRINT_MATRIX(*F);
 			DEBUG_PRINT_MATRIX(*F_t);
-			DEBUG_PRINT_MATRIX(*x_hat);
 			DEBUG_PRINT_MATRIX(*D1_f0);
 			DEBUG_PRINT_MATRIX(*D2_f0);
 			DEBUG_PRINT_MATRIX(*D1_phi);
@@ -1423,7 +1418,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_delete(F_t);
 	matrix_delete(Q);
 	matrix_delete(R);
-	matrix_delete(x_hat);
 	matrix_delete(z_now);
 	matrix_delete(z_last);
 	matrix_delete(x_last);
