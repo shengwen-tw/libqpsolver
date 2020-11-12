@@ -849,6 +849,52 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 		}
 	}
 
+	/*========================================================*
+	 * eliminate equality constraints by null space transform *
+	 *========================================================*/
+
+	matrix_t *F = matrix_zeros(qp->A_eq->column, qp->A_eq->column);
+	matrix_t *F_t = matrix_new(F->column, F->column);
+	matrix_t *Q, *R;
+
+	/*=====================================*
+	 * caclulate null space matrix of A_eq *
+	 *=====================================*/
+
+	/* if user input a rectangular A_eq matrix, fill up zeros to make it
+	 * become a square matrix (required by QR factorization in Lapack) */
+	matrix_t *A_eq_square = matrix_zeros(qp->x->row, qp->x->row);
+	for(r = 0; r < qp->A_eq->row; r++) {
+		for(c = 0; c < qp->A_eq->column; c++) {
+			/* combine copy and tranpose in one line,
+			 * transpose is for calculating the null space of A_eq */
+			matrix_at(A_eq_square, c, r) = matrix_at(qp->A_eq, r, c);
+		}
+	}
+	matrix_qr_factorization(A_eq_square, &Q, &R);
+
+	/* calculate the zeros row count of R matrix */
+	int n_zero_cols = 0;
+	for(r = (R->row - 1); r >= 0; r--) {
+		FLOAT norm = 0;
+		for(c = 0; c < R->column; c++) {
+			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
+		}
+
+		if(fabs(norm) < 1e-8) {
+			n_zero_cols++;
+		}
+	}
+
+	/* copy null space bias vectors from Q matrix */
+	for(r = 0; r < F->row; r++) {
+		for(c = 0; c < n_zero_cols; c++) {
+			matrix_at(F, r, c) = matrix_at(Q, r, (Q->column - n_zero_cols + c));
+		}
+	}
+
+	matrix_transpose(F, F_t);
+
 	/*============================================*
 	 * initialize the inequality slack variable s *
 	 *============================================*/
