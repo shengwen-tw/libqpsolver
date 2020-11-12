@@ -37,7 +37,7 @@ int main(void)
 	//equaility constraint
 	matrix_t A_eq, b_eq;
 	matrix_construct(&A_eq, 1, 2, ELEMENTS(1, 1));
-	matrix_construct(&b_eq, 2, 1, ELEMENTS(0));
+	matrix_construct(&b_eq, 1, 1, ELEMENTS(0));
 
 	//inequality constraints
 	vector_t lb, ub;
@@ -68,7 +68,7 @@ int main(void)
 	/* problem setup */
 	qp_solve_set_optimization_variable(&qp, &x);
 	qp_solve_set_cost_function(&qp, &P, &q, NULL);
-	//qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
+	qp_solve_set_equality_constraints(&qp, &A_eq, &b_eq);
 	qp_solve_set_lower_bound_inequality_constraints(&qp, &lb);
 	qp_solve_set_upper_bound_inequality_constraints(&qp, &ub);
 	qp_solve_set_affine_inequality_constraints(&qp, &A, &b);
