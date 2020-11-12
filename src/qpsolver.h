@@ -95,6 +95,8 @@ typedef struct {
 } qp_t;
 
 void qp_set_default(qp_t *qp);
+void qp_config_phase1(qp_t *qp, phase1_param *phase1_config);
+void qp_config_phase2(qp_t *qp, phase2_param *phase2_config);
 bool qp_start_point_feasibility_check(qp_t *qp);
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x);
 void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r);
