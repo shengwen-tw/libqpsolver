@@ -30,12 +30,12 @@ void qp_set_default(qp_t *qp)
 	//qp->phase1.step_size = 0.1;
 
 	/* parameters of phase2 (quadratic programming) solver */
-	qp->iters = 0;
-	qp->eps = 1e-6;         //residual value to stop the gradient descent inner loop
-	qp->mu = 1.5;           //stiffness growth rate of the log barrier function
-	qp->t_init = 0.01;      //initial stiffness of the log barrier
-	qp->t_max = 50000;      //maximum stiffness of the log barrier
-	qp->max_iters = 10000;  //maximum iteration times
+	qp->phase2.iters = 0;
+	qp->phase2.eps = 1e-6;         //residual value to stop the gradient descent inner loop
+	qp->phase2.mu = 1.5;           //stiffness growth rate of the log barrier function
+	qp->phase2.t_init = 0.01;      //initial stiffness of the log barrier
+	qp->phase2.t_max = 50000;      //maximum stiffness of the log barrier
+	qp->phase2.max_iters = 10000;  //maximum iteration times
 }
 
 bool qp_start_point_feasibility_check(qp_t *qp)
@@ -384,7 +384,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	 *====================*/
 
 	while(qp->phase1.iters < qp->phase1.max_iters) {
-		if(t > (qp->t_init + qp->phase1.t_max)) {
+		if(t > (qp->phase1.t_init + qp->phase1.t_max)) {
 			break;
 		}
 
@@ -586,7 +586,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	int i, j;
 
 	//log barrier's parameter
-	FLOAT t = qp->t_init;
+	FLOAT t = qp->phase2.t_init;
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
@@ -658,14 +658,14 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	}
 
 	/* outer loop varies the stiffness of the log barrier functions */
-	while(qp->iters < qp->max_iters) {
-		if(t > qp->t_max) {
+	while(qp->phase2.iters < qp->phase2.max_iters) {
+		if(t > qp->phase2.t_max) {
 			break;
 		}
 
 		/* inner loop do the gradient descent */
-		while(qp->iters < qp->max_iters) {
-			DEBUG_PRINT("iteration %d\n", qp->iters + 1);
+		while(qp->phase2.iters < qp->phase2.max_iters) {
+			DEBUG_PRINT("iteration %d\n", qp->phase2.iters + 1);
 
 			/* preseve last x for checking convergence */
 			matrix_copy(x_last, qp->x);
@@ -739,7 +739,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			//update the optimization variable
 			matrix_add(x_last, newton_step, qp->x);
 
-			qp->iters++;
+			qp->phase2.iters++;
 			FLOAT resid = vector_residual(qp->x, x_last);
 
 			DEBUG_PRINT_MATRIX(*D1_phi);
@@ -754,12 +754,12 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			DEBUG_PRINT("---\n");
 
 			/* exit if already converged */
-			if(resid < qp->eps) {
+			if(resid < qp->phase2.eps) {
 				break;
 			}
 		}
 
-		t *= qp->mu;
+		t *= qp->phase2.mu;
 	}
 
 	matrix_delete(x_last);
@@ -933,7 +933,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	 *====================*/
 
 	while(qp->phase1.iters < qp->phase1.max_iters) {
-		if(t > (qp->t_init + qp->phase1.t_max)) {
+		if(t > (qp->phase1.t_init + qp->phase1.t_max)) {
 			break;
 		}
 
@@ -1190,7 +1190,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	}
 
 	//log barrier's parameter
-	FLOAT t = qp->t_init;
+	FLOAT t = qp->phase2.t_init;
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
@@ -1331,14 +1331,14 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	 *====================*/
 
 	/* outer loop varies the stiffness of the log barrier functions */
-	while(qp->iters < qp->max_iters) {
-		if(t > (qp->t_init + qp->t_max)) {
+	while(qp->phase2.iters < qp->phase2.max_iters) {
+		if(t > (qp->phase2.t_init + qp->phase2.t_max)) {
 			break;
 		}
 
 		/* inner loop do the gradient descent */
-		while(qp->iters < qp->max_iters) {
-			DEBUG_PRINT("iteration %d\n", qp->iters + 1);
+		while(qp->phase2.iters < qp->phase2.max_iters) {
+			DEBUG_PRINT("iteration %d\n", qp->phase2.iters + 1);
 
 			/* preseve last x and z variable */
 			matrix_copy(z_last, z_now);
@@ -1421,7 +1421,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			//calculate x from z
 			matrix_multiply(F, z_now, qp->x);
 
-			qp->iters++;
+			qp->phase2.iters++;
 
 			FLOAT resid = vector_residual(qp->x, x_last);
 
@@ -1444,12 +1444,12 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			DEBUG_PRINT("---\n");
 
 			/* exit if already converged */
-			if(resid < qp->eps || qp->iters == qp->max_iters) {
+			if(resid < qp->phase2.eps || qp->phase2.iters == qp->phase2.max_iters) {
 				break;
 			}
 		}
 
-		t *= qp->mu;
+		t *= qp->phase2.mu;
 	}
 
 	matrix_delete(D1_f0);

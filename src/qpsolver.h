@@ -44,7 +44,7 @@ typedef struct {
 	FLOAT mu;
 
 	/* gradient descent */
-	FLOAT step_size;
+	FLOAT step_size; //not used, replaced with backtracking line search
 
 	/* backtracking line search parameters*/
 	FLOAT backtracking_alpha;
@@ -55,6 +55,18 @@ typedef struct {
 	int max_iters;
 	int iters;
 } phase1_param;
+
+typedef struct {
+	/* log barrier parameters*/
+	FLOAT t_init;
+	FLOAT t_max;
+	FLOAT mu;
+
+	/* stop criterions */
+	FLOAT eps;
+	int max_iters;
+	int iters;
+} phase2_param;
 
 typedef struct {
 	/* optimization variable */
@@ -75,16 +87,11 @@ typedef struct {
 	matrix_t *A;  //affine inequality matrix
 	vector_t *b;  //affine inequality vector
 
-	/* parameter of phase1 solver */
+	/* parameters of phase1 (feasibility) solver */
 	phase1_param phase1;
 
-	/* stop criterions */
-	FLOAT eps;
-	FLOAT t_init;
-	FLOAT t_max;
-	FLOAT mu;
-	int max_iters;
-	int iters;
+	/* parameters of phase2 (quadratic programming) solver */
+	phase2_param phase2;
 } qp_t;
 
 void qp_set_default(qp_t *qp);
