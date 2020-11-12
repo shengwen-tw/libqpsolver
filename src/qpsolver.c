@@ -432,7 +432,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 				div_fi = -1 / (fi + epsilon);
 
 				/* calculate first derivative of the log barrier function */
-				for(i = 0; i < D1_phi_x->row; i++) {
+				for(i = 0; i < D1_phi_x->row - 1; i++) {
 					matrix_at(D1_phi_x, i, 0) +=
 					    div_by_t * div_fi * matrix_at(A_inequality, r, i);
 				}
@@ -451,8 +451,6 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 			fi = matrix_at(x_prime, x_prime->row - 1, 0) - s_min_now;
 			div_fi = -1.0 / (fi + epsilon);
 			matrix_at(D1_phi_s, qp->x->row, 0) += div_by_t * div_fi;
-
-			DEBUG_PRINT_VAR(fi);
 
 			/* combine first derivative of objective function and log barriers */
 			matrix_add_by(D1_f0, D1_phi_x);
