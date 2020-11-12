@@ -585,8 +585,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	}
 #endif
 
-	return;
-
 	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
