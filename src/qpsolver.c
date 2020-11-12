@@ -552,12 +552,25 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 		matrix_at(qp->x, r, 0) = matrix_at(x_prime, r, 0);
 	}
 
+    int ret_val;
+
 	//if s <= 0 then the problem is feasible
 	if(matrix_at(x_prime, x_prime->row-1, 0) < 0) {
-		return QP_PHASE1_FEASIBLE;
+		ret_val = QP_PHASE1_FEASIBLE;
 	} else {
-		return QP_PHASE1_INFEASIBLE;
+		ret_val = QP_PHASE1_INFEASIBLE;
 	}
+
+	matrix_delete(x_prime);
+	matrix_delete(x_prime_last);
+	matrix_delete(D1_f0);
+	matrix_delete(D1_phi_x); 
+	matrix_delete(D1_phi_s);
+	matrix_delete(descent_step);
+	matrix_delete(A_inequality);
+	matrix_delete(b_inequality);
+
+    return ret_val;
 }
 
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
