@@ -792,6 +792,11 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	matrix_t *z_prime = matrix_new(qp->x->row + 1, qp->x->column);
 	matrix_t *z_prime_last = matrix_new(qp->x->row + 1, qp->x->column);
 
+	//vectos for evaulating the objective function during the backtracking line search
+	matrix_t *z = matrix_new(qp->x->row, qp->x->column);
+	matrix_t *Fz = matrix_new(qp->x->row, qp->x->column);
+	matrix_t *x_prime = matrix_new(qp->x->row + 1, qp->x->column);
+
 	for(r = 0; r < qp->x->row; r++) {
 		matrix_at(z_prime, r, 0) = matrix_at(qp->x, r, 0);
 		matrix_at(z_prime_last, r, 0) = matrix_at(qp->x, r, 0);
@@ -1002,8 +1007,25 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			FLOAT backtracking_t = 1.0f;
 			FLOAT bt_cost_now;
 
+			//XXX: the code could be optmized
+
+			//copy z from z_prime
+			for(r = 0; r < z->row; r++) {
+				matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
+			}
+
+			//calculate x = Fz
+			matrix_multiply(F, z, Fz);
+
+			//x_prime = [Fz; s]
+			for(r = 0; r < x_prime->row - 1; r++) {
+				matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
+			}
+			matrix_at(x_prime, x_prime->row - 1, 0) =
+			    matrix_at(z_prime, z_prime->row - 1, 0);
+
 			//f(x)
-			FLOAT bt_cost_origin = qp_phase1_cost_function(t, z_prime, A_inequality,
+			FLOAT bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
 			                       b_inequality, qp->phase1.beta, s_min_now);
 			//f(x) + (a * t * D1_f(x).' * D1_f(x))
 			FLOAT bt_cost_alpha_line = 0;
@@ -1012,6 +1034,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 			/* backtracking line search loop */
 			while(1) {
+				/* calculate backtraking stop line */
 				alpha_line_change = 0;
 				for(r = 0; r < z_prime->row; r++) {
 					alpha_line_change += matrix_at(D1_f0, r, 0) * matrix_at(D1_f0, r, 0);
@@ -1019,10 +1042,30 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				alpha_line_change *= qp->phase1.backtracking_alpha * backtracking_t;
 				bt_cost_alpha_line = bt_cost_origin - alpha_line_change;
 
+				/* calculate f(x + t * delta_x) */
 				matrix_scaling(-backtracking_t, D1_f0, descent_step);
 				matrix_add(z_prime_last, descent_step, z_prime);
+
+				//XXX: the code could be optimized
+
+				//copy z from z_prime
+				for(r = 0; r < z->row; r++) {
+					matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
+				}
+
+				//x = Fz
+				matrix_multiply(F, z, Fz);
+
+				//x_prime = [Fz; s]
+				for(r = 0; r < x_prime->row - 1; r++) {
+					matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
+				}
+				matrix_at(x_prime, x_prime->row - 1, 0) =
+				    matrix_at(z_prime, z_prime->row - 1, 0);
+
+				//f(x + t * delta_x)
 				bt_cost_now =
-				    qp_phase1_cost_function(t, z_prime, A_inequality,
+				    qp_phase1_cost_function(t, x_prime, A_inequality,
 				                            b_inequality, qp->phase1.beta, s_min_now);
 
 				if(bt_cost_now <= bt_cost_alpha_line) {
