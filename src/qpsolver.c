@@ -151,9 +151,7 @@ static void qp_solve_no_constraint_problem(qp_t *qp)
 	}
 
 	/* solve Px = -q */
-	int *pivots = (int *)malloc(sizeof(int) * qp->P->row);
 	solve_linear_system(qp->P, qp->x, qp->q);
-	free(pivots);
 }
 
 static void qp_solve_equality_constraint_problem(qp_t *qp)
