@@ -789,18 +789,13 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	FLOAT div_by_t;
 
 	//new optimization vector = original vector + slack variable s
-	matrix_t *z_prime = matrix_new(qp->x->row + 1, qp->x->column);
+	matrix_t *z_prime = matrix_zeros(qp->x->row + 1, qp->x->column);
 	matrix_t *z_prime_last = matrix_new(qp->x->row + 1, qp->x->column);
 
 	//vectos for evaulating the objective function during the backtracking line search
 	matrix_t *z = matrix_new(qp->x->row, qp->x->column);
 	matrix_t *Fz = matrix_new(qp->x->row, qp->x->column);
 	matrix_t *x_prime = matrix_new(qp->x->row + 1, qp->x->column);
-
-	for(r = 0; r < qp->x->row; r++) {
-		matrix_at(z_prime, r, 0) = matrix_at(qp->x, r, 0);
-		matrix_at(z_prime_last, r, 0) = matrix_at(qp->x, r, 0);
-	}
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_zeros(qp->x->row + 1, qp->x->column);
@@ -928,7 +923,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	}
 
 	//initialize slack variable s
-	matrix_at(z_prime, qp->x->row, 0) = fi_max + qp->phase1.s_margin;
+	matrix_at(z_prime, z_prime->row - 1, 0) = fi_max + qp->phase1.s_margin;
 
 	//lower bound of s can be for now (avoiding s cross over the inequality constraints of x)
 	FLOAT s_min_now = fi;
@@ -958,12 +953,20 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			/* first derivative of the objective function */
 			matrix_at(D1_f0, z_prime->row-1, 0) = 1;
 
+			//copy z from z_prime (XXX: this code could be optmized)
+			for(r = 0; r < z->row; r++) {
+				matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
+			}
+
+			//calculate x = Fz
+			matrix_multiply(F, z, Fz);
+
 			/* first derivarive of z's inequality constraints */
 			for(r = 0; r < (A_inequality->row - 1); r++) {
 				/* calculate value of the inequality functions */
 				fi = 0;
 				for(j = 0; j < (A_inequality->column - 1); j++) {
-					fi += matrix_at(A_inequality, r, j) * matrix_at(z_prime, j, 0);
+					fi += matrix_at(A_inequality, r, j) * matrix_at(Fz, j, 0);
 				}
 				fi = fi - matrix_at(b_inequality, r, 0) -
 				     matrix_at(z_prime, z_prime->row-1, 0);
@@ -1007,9 +1010,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			FLOAT backtracking_t = 1.0f;
 			FLOAT bt_cost_now;
 
-			//XXX: the code could be optmized
-
-			//copy z from z_prime
+			//copy z from z_prime (XXX: this code could be optmized)
 			for(r = 0; r < z->row; r++) {
 				matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
 			}
@@ -1017,7 +1018,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			//calculate x = Fz
 			matrix_multiply(F, z, Fz);
 
-			//x_prime = [Fz; s]
+			//x_prime = [Fz; s] (XXX: this code could be optmized)
 			for(r = 0; r < x_prime->row - 1; r++) {
 				matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
 			}
@@ -1046,9 +1047,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				matrix_scaling(-backtracking_t, D1_f0, descent_step);
 				matrix_add(z_prime_last, descent_step, z_prime);
 
-				//XXX: the code could be optimized
-
-				//copy z from z_prime
+				//copy z from z_prime (XXX: this code could be optmized)
 				for(r = 0; r < z->row; r++) {
 					matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
 				}
@@ -1056,7 +1055,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				//x = Fz
 				matrix_multiply(F, z, Fz);
 
-				//x_prime = [Fz; s]
+				//x_prime = [Fz; s] (XXX: this code could be optmized)
 				for(r = 0; r < x_prime->row - 1; r++) {
 					matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
 				}
@@ -1088,7 +1087,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			/* initial value of fi_max */
 			fi_max = 0;
 			for(j = 0; j < A_inequality->column - 1; j++) {
-				fi_max += matrix_at(A_inequality, 0, j) * matrix_at(z_prime, j, 0);
+				fi_max += matrix_at(A_inequality, 0, j) * matrix_at(Fz, j, 0);
 			}
 			fi_max -= matrix_at(b_inequality, 0, 0);
 
@@ -1097,7 +1096,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				/* calculate value of the log barrier function */
 				fi = 0;
 				for(c = 0; c < A_inequality->column; c++) {
-					fi += matrix_at(A_inequality, r, c) * matrix_at(z_prime, c, 0);
+					fi += matrix_at(A_inequality, r, c) * matrix_at(Fz, c, 0);
 				}
 				fi -= matrix_at(b_inequality, r, 0);
 
