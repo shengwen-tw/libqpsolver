@@ -365,13 +365,13 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	float fi_max = 0;
 
 	/* initial value of fi_max */
-	for(j = 0; j < A_inequality->column; j++) {
+	for(j = 0; j < A_inequality->column - 1; j++) {
 		fi_max += matrix_at(A_inequality, 0, j) * matrix_at(qp->x, j, 0);
 	}
 	fi_max -= matrix_at(b_inequality, 0, 0);
 
 	/* search for the largest fi_max */
-	for(r = 1; r < b_inequality->row; r++) {
+	for(r = 1; r < b_inequality->row - 1; r++) {
 		/* calculate value of the log barrier function */
 		fi = 0;
 		for(c = 0; c < A_inequality->column; c++) {
