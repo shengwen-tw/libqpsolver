@@ -1,13 +1,8 @@
-EXECUTABLE=./example/qp_solver
-CC=gcc
+-include config.mk
 
-MKL_PATH=/opt/intel/mkl
-MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
-	$(MKL_PATH)/lib/intel64/libmkl_sequential.so \
-	$(MKL_PATH)/lib/intel64/libmkl_core.so
+EXECUTABLE=qp_solver
 
-CFLAGS=
-CFLAGS+=-O3 -g -Wall -Wno-unused-label
+CFLAGS=-O3 -g -Wall -Wno-unused-label
 CFLAGS+=-I$(MKL_PATH)/include
 CFLAGS+=-I./include
 
