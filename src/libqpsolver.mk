@@ -1,10 +1,12 @@
 -include ../config.mk
 
-CFLAGS=-O3 -g -Wall -Wno-unused-label
-CFLAGS+=-I$(MKL_PATH)/include
-CFLAGS+=-I../include
+LIB_QPSOLVER=libqpsolver.a
+LIB_QPSOLVER_PATH=../include
 
-LDFLAGS=-lm
+CFLAGS=-O3 -g -Wall -Wno-unused-label
+
+CFLAGS+=-I$(MKL_PATH)/include
+CFLAGS+=-I$(LIB_QPSOLVER_PATH)
 
 SRC=qpsolver.c \
 	matrix.c
@@ -12,7 +14,7 @@ SRC=qpsolver.c \
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
 
-libqpsolver.a: $(OBJS)
+$(LIB_QPSOLVER): $(OBJS)
 	@echo "AR" $@
 	@$(AR) -rcs $@ $(OBJS)
 
@@ -20,4 +22,9 @@ libqpsolver.a: $(OBJS)
 
 %.o: %.c
 	@echo "CC" $@
-	@$(CC) $(CFLAGS) -MMD -MP -c $< $(LDFLAGS) -o $@
+	@$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+clean:
+	rm -rf $(LIB_QPSOLVER)
+	rm -rf $(OBJS)
+	rm -rf $(DEPEND)

@@ -1,5 +1,6 @@
 qp_solver
 test_lapack
+*.a
 *.d
 *.sw*
 *.o
