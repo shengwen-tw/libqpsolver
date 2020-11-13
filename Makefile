@@ -1,4 +1,4 @@
-EXECUTABLE=qp_solver
+EXECUTABLE=./example/qp_solver
 CC=gcc
 
 MKL_PATH=/opt/intel/mkl
@@ -8,14 +8,14 @@ MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
 
 CFLAGS=
 CFLAGS+=-O3 -g -Wall -Wno-unused-label
+CFLAGS+=-I$(MKL_PATH)/include
+CFLAGS+=-I./include
 
 LDFLAGS=-lm
 
-CFLAGS+=-I$(MKL_PATH)/include
-
-SRC=main.c \
-	matrix.c \
-	qpsolver.c
+SRC=example/qp_test.c \
+	src/matrix.c \
+	src/qpsolver.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
@@ -38,5 +38,6 @@ astyle:
 clean:
 	rm -rf $(EXECUTABLE)
 	rm -rf $(OBJS)
+	rm -rf $(DEPEND)
 
 .PHONY: all clean astyle

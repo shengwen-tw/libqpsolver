@@ -93,7 +93,7 @@ int main(void)
 	printf("run time: %lf seconds\n"
 	       "phase1 stage took %d iterations\n"
 	       "phase2 stage took %d iterations\n",
-	       end_time - start_time, qp.phase1.iters, qp.iters + 1);
+	       end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
 
 	return 0;
 }
