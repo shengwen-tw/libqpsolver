@@ -6,18 +6,18 @@ CFLAGS+=-I../include
 
 LDFLAGS=-lm
 
-SRC=matrix.c \
-	qpsolver.c
+SRC=qpsolver.c \
+	matrix.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
 
 libqpsolver.a: $(OBJS)
 	@echo "AR" $@
-	@$(AR) rcs $@ $^
+	@$(AR) -rcs $@ $(OBJS)
 
 -include $(DEPEND)
 
-$(OBJS): $(SRC)
+%.o: %.c
 	@echo "CC" $@
 	@$(CC) $(CFLAGS) -MMD -MP -c $< $(LDFLAGS) -o $@

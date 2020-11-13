@@ -2,30 +2,31 @@
 
 EXECUTABLE=qp_solver
 
-CFLAGS=-O3 -g -Wall -Wno-unused-label
+CFLAGS=-O2 -g -Wall -Wno-unused-label
 CFLAGS+=-I$(MKL_PATH)/include
 CFLAGS+=-I./include
 
-LDFLAGS=-lm
+LDFLAGS=-Lsrc -lqpsolver $(MKL_LDFLAGS) -lm
 
-SRC=example/qp_test.c \
-	src/matrix.c \
-	src/qpsolver.c
+SRC=example/qp_test.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
 
 all: $(EXECUTABLE)
 
-$(EXECUTABLE): $(OBJS)
+$(EXECUTABLE): $(OBJS) src/libqpsolver.a
 	@echo "LD" $@
-	@$(CC) $(CFLAGS) $(OBJS) $(MKL_LDFLAGS) $(LDFLAGS) -o $@
+	@$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
+
+src/libqpsolver.a:
+	@echo "Build libqpsolver.a"
+	@$(MAKE) -C ./src -f libqpsolver.mk
 
 -include $(DEPEND)
-
 %.o: %.c
 	@echo "CC" $@
-	@$(CC) $(CFLAGS) -MMD -MP -c $< $(LDFLAGS) -o $@
+	@$(CC) -I./include $(CFLAGS) -MMD -MP -c $< -o $@
 
 astyle:
 	astyle --style=linux --indent=tab=4 --recursive "*.c,*.h"
