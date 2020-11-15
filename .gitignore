@@ -5,4 +5,5 @@ test_lapack
 *.sw*
 *.o
 *.orig
+*.so
 octave-workspace
