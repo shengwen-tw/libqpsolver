@@ -60,4 +60,6 @@ def test_qp():
     print('\nOptimal solution given by cvxopy:')
     print(sol['x'])
 
+    libqpsolver.my_quadprog(P, q, G, h, A, b, None, None)
+
 test_qp()
