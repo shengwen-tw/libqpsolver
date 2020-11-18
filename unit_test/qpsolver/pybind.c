@@ -10,7 +10,7 @@ namespace py = pybind11;
 
 using pyarray = std::optional<py::array_t<FLOAT>>;
 
-bool unit_test_debug_print = true;
+bool unit_test_debug_print = false;
 
 void test_print_matrix(string prompt, matrix_t *mat)
 {
@@ -49,12 +49,36 @@ bool convert_np_array_to_matrix(matrix_t **mat, pyarray &py_arr)
 	return true;
 }
 
-void my_quadprog(pyarray P_numpy,    pyarray q_numpy,
-                 pyarray A_numpy,    pyarray b_numpy,
-                 pyarray A_eq_numpy, pyarray b_eq_numpy,
-                 pyarray lb_numpy,   pyarray ub_numpy)
+py::array_t<FLOAT> convert_np_array_to_matrix(matrix_t *mat)
 {
-	matrix_t *x, *P, *q, *A, *b, *A_eq, *b_eq, *lb, *ub;
+	unsigned long n_row = mat->row;
+	unsigned long n_column = mat->column;
+
+	auto buf_info =
+	    py::buffer_info(mat->data,
+	                    sizeof(FLOAT),
+	                    py::format_descriptor<FLOAT>::format(),
+	                    2,
+	                    std::vector<size_t> {n_row, n_column},
+	                    std::vector<size_t> {n_column * sizeof(FLOAT), sizeof(FLOAT)}
+	                   );
+	return py::array_t<FLOAT>(buf_info);
+}
+
+py::array_t<FLOAT> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
+                               pyarray A_numpy,    pyarray b_numpy,
+                               pyarray A_eq_numpy, pyarray b_eq_numpy,
+                               pyarray lb_numpy,   pyarray ub_numpy)
+{
+	matrix_t *x = NULL;
+	matrix_t *P = NULL;
+	matrix_t *q = NULL;
+	matrix_t *A = NULL;
+	matrix_t *b = NULL;
+	matrix_t *A_eq = NULL;
+	matrix_t *b_eq = NULL;
+	matrix_t *lb = NULL;
+	matrix_t *ub = NULL;
 
 	bool has_P = convert_np_array_to_matrix(&P, P_numpy);
 	bool has_q = convert_np_array_to_matrix(&q, q_numpy);
@@ -106,10 +130,17 @@ void my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 	}
 
 	qp_solve_start(&qp);
+
+	if(unit_test_debug_print == true) {
+		printf("the optimal solution of the problem is:\n");
+	}
+	test_print_matrix("x", x);
+
+	return convert_np_array_to_matrix(x);
 }
 
 PYBIND11_MODULE(libqpsolver, qp)
 {
 	qp.doc() = "libqpsolver, a quadratic programming library written in C";
-	qp.def("my_quadprog", &my_quadprog, "");
+	qp.def("quadprog", &my_quadprog, "");
 }

@@ -1,6 +1,11 @@
+#!/bin/bash
+
 import libqpsolver
+import os
 import numpy as np
 from cvxopt import matrix, solvers
+
+os.system('soruce ./LD_PRELOAD.sh')
 
 def quadprog_cvxopt(P, q, G=None, h=None, A=None, b=None, options=None):
     """
@@ -46,7 +51,7 @@ def test_qp():
     A = np.array([[1.0, 1.0]])
     b = np.array([[0.0]])
 
-    sol = quadprog_cvxopt(P, q, G, h, A, b, None)
+    cvxopt_sol = quadprog_cvxopt(P, q, G, h, A, b, None)
 
     print('Test matrices:')
 
@@ -58,8 +63,9 @@ def test_qp():
     print('b = \n%s' %(b))
 
     print('\nOptimal solution given by cvxopy:')
-    print(sol['x'])
+    print(cvxopt_sol['x'])
 
-    libqpsolver.my_quadprog(P, q, G, h, A, b, None, None)
+    libqpsolver_sol = libqpsolver.quadprog(P, q, G, h, A, b, None, None)
+    print(libqpsolver_sol)
 
 test_qp()
