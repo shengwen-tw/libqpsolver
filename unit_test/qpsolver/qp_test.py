@@ -1,5 +1,10 @@
 #!/bin/bash
 
+'''
+do not directly run this script, you should execute the unit test
+by launching the "run_test.sh"
+'''
+
 import libqpsolver
 import os
 import numpy as np

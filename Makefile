@@ -10,7 +10,7 @@ libqpsolver:
 
 unit_test:
 	@$(MAKE) -C ./unit_test/qpsolver -f Makefile
-	@python3 ./unit_test/qpsolver/qp_test.py
+	@./unit_test/qpsolver/run_test.sh
 
 astyle:
 	astyle --style=linux --indent=tab=4 --recursive "*.c,*.h"
