@@ -1,0 +1,93 @@
+Test matrices:
+P = 
+[[105.22188005  88.2765082 ]
+ [ 88.2765082   75.43458116]]
+q = 
+[[61.68075436]
+ [78.93151041]]
+A = 
+[[ 1.  1.]
+ [-1.  2.]
+ [ 2.  1.]]
+b = 
+[[2.]
+ [2.]
+ [3.]]
+A_eq = 
+[[1. 1.]]
+b_eq = 
+[[0.]]
+
+Optimal solution given cvxopt:
+[[ 2.99999995]
+ [-2.99999995]]
+
+Optimal solution by libqpsolver
+[[ 2.80911  ]
+ [-2.8091102]]
+
+error, unit test did not passed
+===========================================
+Test matrices:
+P = 
+[[104.28876007  10.04472543]
+ [ 10.04472543 211.54881715]]
+q = 
+[[132.41770529]
+ [408.38606605]]
+A = 
+[[ 1.  1.]
+ [-1.  2.]
+ [ 2.  1.]]
+b = 
+[[2.]
+ [2.]
+ [3.]]
+A_eq = 
+[[1. 1.]]
+b_eq = 
+[[0.]]
+
+Optimal solution given cvxopt:
+[[ 0.93311952]
+ [-0.93311952]]
+
+Optimal solution by libqpsolver
+[[ 0.93311965]
+ [-0.9331197 ]]
+
+unit test passed
+===========================================
+Test matrices:
+P = 
+[[421.3935798  414.87385042]
+ [414.87385042 719.24452076]]
+q = 
+[[460.70174253]
+ [752.46366789]]
+A = 
+[[ 1.  1.]
+ [-1.  2.]
+ [ 2.  1.]]
+b = 
+[[2.]
+ [2.]
+ [3.]]
+A_eq = 
+[[1. 1.]]
+b_eq = 
+[[0.]]
+
+Optimal solution given cvxopt:
+[[ 0.93847193]
+ [-0.93847193]]
+
+Optimal solution by libqpsolver
+[[ 0.938472  ]
+ [-0.93847203]]
+
+unit test passed
+===========================================
+[solver] problem type: equality and inequality constrained QP
+[solver] problem type: equality and inequality constrained QP
+[solver] problem type: equality and inequality constrained QP

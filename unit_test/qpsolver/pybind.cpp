@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sys/time.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
@@ -11,6 +12,16 @@ namespace py = pybind11;
 using pyarray = std::optional<py::array_t<FLOAT>>;
 
 bool unit_test_debug_print = false;
+
+double time(void)
+{
+    static int sec = -1;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    if (sec < 0) sec = tv.tv_sec;
+    return (tv.tv_sec - sec) + 1.0e-6 * tv.tv_usec;
+}
 
 void test_print_matrix(string prompt, matrix_t *mat)
 {
@@ -129,12 +140,19 @@ py::array_t<FLOAT> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 		test_print_matrix("ub", ub);
 	}
 
-	qp_solve_start(&qp);
+    double start_time = time();
+    qp_solve_start(&qp);
+    double end_time = time();
 
 	if(unit_test_debug_print == true) {
 		printf("the optimal solution of the problem is:\n");
 	}
 	test_print_matrix("x", x);
+
+    printf("\nrun time: %lf seconds\n"
+           "phase1 stage took %d iterations\n"
+           "phase2 stage took %d iterations\n",
+           end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
 
 	return convert_np_array_to_matrix(x);
 }
