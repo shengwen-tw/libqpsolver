@@ -18,7 +18,7 @@ def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     """
 
     #verbose option
-    options = solvers.options['show_progress'] = False
+    #options = solvers.options['show_progress'] = False
 
     #objective function
     P, q = matrix(P), matrix(q)
@@ -82,29 +82,32 @@ def test_random_2x2_qp_problem(cost_func_max_val):
     A_eq = np.array([[1.0, 1.0]])
     b_eq = np.array([[0.0]])
 
-    print('Test input matrices:')
+    print('[Test input matrices]')
     print('P = \n%s' %(P))
     print('q = \n%s' %(q))
     print('A = \n%s' %(A))
     print('b = \n%s' %(b))
     print('A_eq = \n%s' %(A_eq))
-    print('b_eq = \n%s' %(b_eq))
+    print('b_eq = \n%s\n' %(b_eq))
 
+    print('[debug message from CVXOPT]')
     cvxopt_sol = quadprog_cvxopt(P, q, A, b, A_eq, b_eq, None)
+
+    print('\n[debug message from libqpsolver]')
     libqpsolver_sol = libqpsolver.quadprog(P, q, A, b, A_eq, b_eq, None, None)
 
-    print('\nOptimal solution given cvxopt:')
+    print('\n[Optimal solution by CVXOPT]')
     print(cvxopt_sol)
 
-    print('\nOptimal solution by libqpsolver')
+    print('\n[Optimal solution by libqpsolver]')
     print(libqpsolver_sol)
 
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
     if test_result == True:
-        print('\nunit test passed')
+        print('\n[unit test passed]')
     else:
-        print('\nerror, unit test did not passed')
+        print('\n[error, unit test did not passed]')
 
     print('=============================================================')
 

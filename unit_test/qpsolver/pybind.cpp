@@ -149,7 +149,7 @@ py::array_t<FLOAT> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 	}
 	test_print_matrix("x", x);
 
-    printf("\nrun time: %lf seconds\n"
+    printf("run time: %lf seconds\n"
            "phase1 stage took %d iterations\n"
            "phase2 stage took %d iterations\n",
            end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
