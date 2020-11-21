@@ -1,6 +1,11 @@
 # libqpsolver
 
-Quadratic programming solver library written in C
+A quadratic programming solver library written in C
+
+## Feature
+
+1. Solving quadratic programming problem with or without equality, inequality, lower bound and upper bound constraints
+2. Support infeasible start with basic phase1 method
 
 ## Prerequisite
 
