@@ -11,6 +11,12 @@ A quadratic programming solver library written in C
 
 [Intel Math Kernel Library (MKL)](https://software.intel.com/content/www/us/en/develop/tools/performance-libraries.html)
 
+Make sure the MKL_PATH variable in ``config.mk`` is as same as your installation, the default directory path is set as:
+
+```
+MKL_PATH=/opt/intel/mkl
+```
+
 ## Build and run
 
 ```
