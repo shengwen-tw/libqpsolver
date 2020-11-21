@@ -10,8 +10,6 @@ import os
 import numpy as np
 from cvxopt import matrix, solvers
 
-os.system('soruce ./LD_PRELOAD.sh')
-
 def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     """
     qp solver provided by cvxopt package:
@@ -51,15 +49,14 @@ def matrix_compare(mat1, mat2):
 
     for i in range(len(mat1)):
         abs_diff = abs(mat1[i] - mat2[i])
-        print(abs_diff)
         if abs_diff > epsilon:
             return False
 
     return True
 
 def test_qp():
-    P = np.array([[+1.0, -1.0],
-                  [-1.0, +2.0]])
+    P = np.array([[+3.0, -1.0],
+                  [-1.0, +4.0]])
     q = np.array([[-2.0],
                   [-6.0]])
     A = np.array([[+1.0, +1.0],
