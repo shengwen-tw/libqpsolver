@@ -12,7 +12,7 @@ CFLAGS+=-I$(LIB_QPSOLVER_INC)
 
 LDFLAGS=-L../src -lqpsolver $(MKL_LDFLAGS) -lm
 
-SRC=qp_test.c
+SRC=qp_example.c
 
 OBJS=$(SRC:.c=.o)
 DEPEND=$(SRC:.c=.d)
