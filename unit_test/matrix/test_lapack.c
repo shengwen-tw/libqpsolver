@@ -149,6 +149,22 @@ void test_solve_null_space(void)
 	matrix_delete(R);
 }
 
+void test_matrix_rank(void)
+{
+	printf("\nRank of matrix A:\n");
+
+	matrix_t A;
+	matrix_construct(&A, 4, 4, ELEMENTS(10,  0,  0,     0,
+	                                    0, 25,  0,     0,
+	                                    0,  0, 34,     0,
+	                                    0,  0,  0, 1e-15));
+
+	int rank = matrix_rank(&A);
+
+	PRINT_MATRIX(A);
+	printf("The rank of matrix A is %d\n", rank);
+}
+
 int main(void)
 {
 	test_solve_linear_system();
@@ -156,6 +172,7 @@ int main(void)
 	test_matrix_multiplication();
 	test_qr_factorization();
 	test_solve_null_space();
+	test_matrix_rank();
 
 	return 0;
 }

@@ -70,4 +70,10 @@
 #define ORGQR LAPACKE_dorgqr
 #endif
 
+#if (FLOAT_PRECISION == USE_FLOAT)
+#define GESVD LAPACKE_sgesvd
+#elif (FLOAT_PRECISION == USE_DOUBLE)
+#define GESVD LAPACKE_dgesvd
+#endif
+
 #endif

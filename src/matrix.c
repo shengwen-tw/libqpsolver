@@ -5,6 +5,42 @@
 #include "libqpsolver.h"
 #include "matrix.h"
 
+int matrix_rank(matrix_t* mat)
+{
+	int rank = 0;
+	FLOAT epsilon = 1e-6;
+
+	matrix_t *S = matrix_new(mat->column, 1);
+	matrix_t *superb = matrix_new(mat->column, 1);
+
+	GESVD(LAPACK_ROW_MAJOR,
+	      'N',
+	      'N',
+	      mat->row,
+	      mat->column,
+	      mat->data,
+	      mat->column,
+	      S->data,
+	      NULL,
+	      mat->row,
+	      NULL,
+	      mat->column,
+	      superb->data
+	     );
+
+	int r;
+	for(r = 0; r < S->row; r++) {
+		if(matrix_at(S, r, 0) > epsilon) {
+			rank++;
+		}
+	}
+
+	matrix_delete(S);
+	matrix_delete(superb);
+
+	return rank;
+}
+
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 {
 	memcpy(X->data, B->data, sizeof(FLOAT) * X->row * X->column);

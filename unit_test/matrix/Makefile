@@ -11,9 +11,9 @@ CFLAGS+=-O3 -Wall -g
 LDFLAGS=-lm
 
 CFLAGS+=-I$(MKL_PATH)/include
-CFLAGS+=-I../
+CFLAGS+=-I../../include
 
-SRC=../matrix.c
+SRC=../../src/matrix.c
 
 test_lapack: test_lapack.c $(SRC)
 	$(CC) $(CFLAGS) $^ $(MKL_LDFLAGS) $(LDFLAGS) -o $@

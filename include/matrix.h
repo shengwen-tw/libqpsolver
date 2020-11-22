@@ -38,6 +38,7 @@ void matrix_scale_by(FLOAT scaler, matrix_t *mat);
 void matrix_transpose(matrix_t *mat, matrix_t *trans_mat);
 
 /* advanced matrix operations */
+int matrix_rank(matrix_t* mat);
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
 void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret);
 
