@@ -5,7 +5,8 @@ A quadratic programming solving library written in C
 ## Features
 
 1. Solving quadratic programming problem with or without equality, inequality, lower bound and upper bound constraints
-2. Support infeasible start with basic phase1 method
+2. Primal based interrior point method (log barrier method)
+3. Support infeasible start with basic phase1 method
 
 ## Prerequisite
 
