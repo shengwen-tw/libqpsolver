@@ -794,6 +794,25 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	int r, c;
 	int i, j;
 
+	/* check if the equality constraint is feasible */
+	matrix_t *A_augment_b = matrix_new(qp->A_eq->row, qp->A_eq->column + 1);
+	for(r = 0; r < qp->A_eq->row; r++) {
+		for(c = 0; c < qp->A_eq->column; c++) {
+			matrix_at(A_augment_b, r, c) = matrix_at(qp->A_eq, r, c);
+		}
+		matrix_at(A_augment_b, r, c + 1) = matrix_at(qp->b_eq, r, 0);
+	}
+	int rank_A = matrix_rank(qp->A_eq);
+	int rank_augmented_A = matrix_rank(A_augment_b);
+
+	DEBUG_PRINT_VAR(rank_A);
+	DEBUG_PRINT_VAR(rank_augmented_A);
+
+	/* the equality constraint has no solution */
+	if(rank_A != rank_augmented_A) {
+		return QP_PHASE1_INFEASIBLE;
+	}
+
 	//log barrier's parameter
 	FLOAT t = qp->phase1.t_init;
 	FLOAT div_by_t;
@@ -1150,6 +1169,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 		ret_val = QP_PHASE1_INFEASIBLE;
 	}
 
+	matrix_delete(A_augment_b);
 	matrix_delete(z_prime);
 	matrix_delete(z_prime_last);
 	matrix_delete(D1_f0);
