@@ -7,24 +7,27 @@
 
 int matrix_rank(matrix_t* mat)
 {
+	matrix_t *mat_copy = matrix_new(mat->row, mat->column);
+	matrix_copy(mat_copy, mat);
+
 	int rank = 0;
 	FLOAT epsilon = 1e-6;
 
-	matrix_t *S = matrix_new(mat->column, 1);
-	matrix_t *superb = matrix_new(mat->column, 1);
+	matrix_t *S = matrix_new(mat_copy->column, 1);
+	matrix_t *superb = matrix_new(mat_copy->column, 1);
 
 	GESVD(LAPACK_ROW_MAJOR,
 	      'N',
 	      'N',
-	      mat->row,
-	      mat->column,
-	      mat->data,
-	      mat->column,
+	      mat_copy->row,
+	      mat_copy->column,
+	      mat_copy->data,
+	      mat_copy->column,
 	      S->data,
 	      NULL,
-	      mat->row,
+	      mat_copy->row,
 	      NULL,
-	      mat->column,
+	      mat_copy->column,
 	      superb->data
 	     );
 
@@ -35,6 +38,7 @@ int matrix_rank(matrix_t* mat)
 		}
 	}
 
+	matrix_delete(mat_copy);
 	matrix_delete(S);
 	matrix_delete(superb);
 
