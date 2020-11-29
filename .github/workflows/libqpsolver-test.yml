@@ -18,12 +18,11 @@ jobs:
            tar -zxvf l_mkl_2020.3.279.tgz
            cd l_mkl_2020.3.279
            
-           export MKL_INSTALL_DIR=/opt/intel
            echo "ACCEPT_EULA=accept" >> silent.cfg
-           echo "PSET_INSTALL_DIR=${MKL_INSTALL_DIR}" >> silent.cfg
+           echo "PSET_INSTALL_DIR=/opt/intel" >> silent.cfg
            sudo bash ./install.sh --user-mode -s ./silent.cfg
            
-           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:'$MKL_INSTALL_DIR'/lib/intel64/
+           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/lib/intel64/
            
            cd ..
            
@@ -35,5 +34,10 @@ jobs:
       
     - name: Run example
       run: |
-           ./libqpsolver/example/qp_solver
-l
+           MKL_LIB_PATH=/opt/intel/mkl/lib/intel64/
+           MKL_LIBS=$MKL_LIB_PATH/libmkl_def.so
+           MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_avx2.so
+           MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_core.so
+           MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_intel_lp64.so
+           MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_sequential.so
+           export LD_PRELOAD=$MKL_LIBS
