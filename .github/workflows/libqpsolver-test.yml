@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Build and run unit test
 
 on:
   push:
@@ -10,8 +10,30 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
+ 
+    steps:      
     - name: Install Intel MKL
-    - run: ./mkl_install.sh
+      run: |
+           wget https://registrationcenter-download.intel.com/akdlm/irc_nas/tec/16903/l_mkl_2020.3.279.tgz
+           tar -zxvf l_mkl_2020.3.279.tgz
+           cd l_mkl_2020.3.279
+           
+           export MKL_INSTALL_DIR=/opt/intel
+           echo "ACCEPT_EULA=accept" >> silent.cfg
+           echo "PSET_INSTALL_DIR=${MKL_INSTALL_DIR}" >> silent.cfg
+           sudo bash ./install.sh --user-mode -s ./silent.cfg
+           
+           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:'$MKL_INSTALL_DIR'/lib/intel64/
+           
+           cd ..
+           
+    - name: Build libqpsolver
+      run: |
+           git clone https://github.com/shengwen-tw/libqpsolver.git
+           cd libqpsolver
+           make
+      
+    - name: Run example
+      run: |
+           ./libqpsolver/example/qp_solver
+l
