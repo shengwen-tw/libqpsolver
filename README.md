@@ -35,6 +35,8 @@ make example
 
 ## Unit test
 
+The unit test launchs the solver to solve randomly generated QP problems several times (~10000) and compare the results with [CVXOPT](http://cvxopt.org/), it may take several minutes to complete the process.
+
 ```
 make unit_test
 ```
