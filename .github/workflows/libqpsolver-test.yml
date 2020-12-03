@@ -2,7 +2,7 @@ name: Build and run unit test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]pip install setuptools
   pull_request:
     branches: [ master ]
 
@@ -44,6 +44,7 @@ jobs:
            
     - name: Run unit test
       run: |
+          pip3 install setuptools
           pip3 install numpy
           pip3 install pybind11
           
