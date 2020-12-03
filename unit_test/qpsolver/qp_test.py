@@ -8,6 +8,9 @@ import os
 import numpy as np
 from cvxopt import matrix, solvers
 
+sol_diff_cnt = 0
+curr_test_num = 0
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -58,7 +61,7 @@ def matrix_compare(mat1, mat2):
     for i in range(len(mat1)):
         error_percentage = abs(mat1[i] - mat2[i]) / abs(mat1[i])
 
-        #tolerate of 5% of error
+        #tolerate 5% of error
         if error_percentage > 0.05:
             return False
 
@@ -120,26 +123,45 @@ def test_random_2x2_qp_problem(cost_func_max_val):
 
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
-    global test_failed_counter
+    global sol_diff_cnt
+    global curr_test_num
+    curr_test_num = curr_test_num + 1
 
     if test_result == True:
-        print(f"{bcolors.OKGREEN}\n[unit test passed]{bcolors.ENDC}")
+        print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
     else:
-        print(f"{bcolors.FAIL}\n[error, unit test did not passed]{bcolors.ENDC}")
-        exit(1)
+        print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
+        sol_diff_cnt = sol_diff_cnt + 1
 
-    print('=============================================================')
+    print('===============================================================')
 
     return test_result
 
 def test_libqpsolver():
-    for i in range(0, 50):
+    test_suite_exec_times = 10000
+
+    for i in range(0, test_suite_exec_times):
         test_random_2x2_qp_problem(100)
         test_random_2x2_qp_problem(500)
         test_random_2x2_qp_problem(1000)
 
+    total_test_times = test_suite_exec_times * 3
+
+    correctness = (1.0 - (sol_diff_cnt / total_test_times)) * 100.0
+
+    print(f"{bcolors.BOLD}unit test total run times = %d{bcolors.ENDC}" %(total_test_times))
+    print(f"-> %d of %d failed" %(sol_diff_cnt, total_test_times))
+
+    #if error count exceed 1% of total test count, than the solver is not stable
+    if (sol_diff_cnt / total_test_times) > 0.1:
+        print(f"{bcolors.FAIL}[failed] correctness = %f%%{bcolors.ENDC}" %(correctness))
+        print(f"{bcolors.FAIL}the solver is unstable due to the correctness is lower than 99%{bcolors.ENDC}")
+        exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[passed] correctness = %f%%{bcolors.ENDC}" %(correctness))
+        exit(0)
+
 def main():
     test_libqpsolver()
-    print('successfully ran all unit tests')
 
 if __name__ == "__main__": main()
