@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "libqpsolver.h"
 
-#define ELEMENTS(...) (FLOAT []){__VA_ARGS__}
+#define ELEMENTS(...) (double []){__VA_ARGS__}
 
 #define matrix_at(mat_ptr, r, c) (mat_ptr)->data[((r) * (mat_ptr)->column) + (c)]
 
@@ -12,7 +12,7 @@
 #define PRINT_VAR(var) print_var(#var, var)
 
 typedef struct {
-	FLOAT *data;
+	double *data;
 	int row;
 	int column;
 } matrix_t;
@@ -20,7 +20,7 @@ typedef struct {
 typedef matrix_t vector_t;
 
 /* matrix constructors and destructors */
-void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data);
+void matrix_construct(matrix_t *mat, int r, int c, double *data);
 matrix_t* matrix_new(int r, int c);
 matrix_t* matrix_zeros(int r, int c);
 void matrix_delete(matrix_t *mat);
@@ -33,8 +33,8 @@ void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 void matrix_add_by(matrix_t *lhs, matrix_t *rhs);
 void matrix_sub(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result);
-void matrix_scaling(FLOAT scaler, matrix_t *in, matrix_t *out);
-void matrix_scale_by(FLOAT scaler, matrix_t *mat);
+void matrix_scaling(double scaler, matrix_t *in, matrix_t *out);
+void matrix_scale_by(double scaler, matrix_t *mat);
 void matrix_transpose(matrix_t *mat, matrix_t *trans_mat);
 
 /* advanced matrix operations */
@@ -42,10 +42,10 @@ int matrix_rank(matrix_t* mat);
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B);
 void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret);
 
-FLOAT vector_residual(vector_t *vec1, vector_t *vec2);
-FLOAT vector_norm(vector_t *vec);
+double vector_residual(vector_t *vec1, vector_t *vec2);
+double vector_norm(vector_t *vec);
 
 void print_matrix(char *prompt, matrix_t *mat);
-void print_var(char *prompt, FLOAT var);
+void print_var(char *prompt, double var);
 
 #endif

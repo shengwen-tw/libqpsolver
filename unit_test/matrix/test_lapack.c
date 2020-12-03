@@ -117,7 +117,7 @@ void test_solve_null_space(void)
 	int n_zero_cols = 0;
 	int r, c;
 	for(r = (R->row - 1); r >= 0; r--) {
-		FLOAT norm = 0;
+		double norm = 0;
 		for(c = 0; c < R->column; c++) {
 			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
 		}

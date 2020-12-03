@@ -35,35 +35,35 @@ enum {
 
 typedef struct {
 	/* slack variable parameters for feasibility problem */
-	FLOAT s_margin;
-	FLOAT beta;
+	double s_margin;
+	double beta;
 
 	/* log barrier parameters*/
-	FLOAT t_init;
-	FLOAT t_max;
-	FLOAT mu;
+	double t_init;
+	double t_max;
+	double mu;
 
 	/* gradient descent */
-	FLOAT step_size; //not used, replaced with backtracking line search
+	double step_size; //not used, replaced with backtracking line search
 
 	/* backtracking line search parameters*/
-	FLOAT backtracking_alpha;
-	FLOAT backtracking_beta;
+	double backtracking_alpha;
+	double backtracking_beta;
 
 	/* stop criterions */
-	FLOAT eps;
+	double eps;
 	int max_iters;
 	int iters;
 } phase1_param;
 
 typedef struct {
 	/* log barrier parameters*/
-	FLOAT t_init;
-	FLOAT t_max;
-	FLOAT mu;
+	double t_init;
+	double t_max;
+	double mu;
 
 	/* stop criterions */
-	FLOAT eps;
+	double eps;
 	int max_iters;
 	int iters;
 } phase2_param;

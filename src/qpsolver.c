@@ -50,13 +50,13 @@ void qp_config_phase2(qp_t *qp, phase2_param *phase2_config)
 
 bool qp_start_point_feasibility_check(qp_t *qp)
 {
-	FLOAT fi;
+	double fi;
 	int r, c;
 
 	/* equality constraints */
 	if((qp->A_eq != NULL) && (qp->b_eq != NULL)) {
 		bool infeasible = false;
-		const FLOAT tolerance = 1e-3;
+		const double tolerance = 1e-3;
 
 		vector_t *Ax = matrix_new(qp->b_eq->row, qp->b_eq->column);
 		vector_t *lin_sys_sol = matrix_new(qp->b_eq->row, qp->b_eq->column);
@@ -259,14 +259,14 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	matrix_delete(qb_vec);
 }
 
-static FLOAT qp_phase1_cost_function(FLOAT t, matrix_t *x_prime,
+static double qp_phase1_cost_function(double t, matrix_t *x_prime,
                                      matrix_t *A_inequality, matrix_t* b_inequality,
-                                     FLOAT beta, FLOAT s_min)
+                                     double beta, double s_min)
 {
 	int r, c;
 
-	FLOAT f, fi;
-	FLOAT div_by_t = 1.0f / t;
+	double f, fi;
+	double div_by_t = 1.0f / t;
 
 	/* cost of slack variable s */
 	f = matrix_at(x_prime, x_prime->row - 1, 0);
@@ -300,14 +300,14 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
-	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
+	const double epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
 	int i, j;
 
 	//log barrier's parameter
-	FLOAT t = qp->phase1.t_init;
-	FLOAT div_by_t;
+	double t = qp->phase1.t_init;
+	double div_by_t;
 
 	//new optimization vector = original vector + slack variable s
 	matrix_t *x_prime = matrix_new(qp->x->row + 1, qp->x->column);
@@ -326,8 +326,8 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	matrix_t *D1_phi_s = matrix_zeros(qp->x->row + 1, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	FLOAT fi = 0;
-	FLOAT div_fi = 0;
+	double fi = 0;
+	double div_fi = 0;
 
 	//gradient descent step
 	vector_t *descent_step = matrix_new(qp->x->row + 1, qp->x->column);
@@ -373,7 +373,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	/*============================================*
 	 * initialize the inequality slack variable s *
 	 *============================================*/
-	FLOAT fi_max = 0;
+	double fi_max = 0;
 
 	/* initial value of fi_max */
 	for(j = 0; j < A_inequality->column - 1; j++) {
@@ -399,7 +399,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	matrix_at(x_prime, qp->x->row, 0) = fi_max + qp->phase1.s_margin;
 
 	//lower bound of s can be for now (avoiding s cross over the inequality constraints of x)
-	FLOAT s_min_now = fi;
+	double s_min_now = fi;
 
 	/*====================*
 	 * optimization start *
@@ -467,16 +467,16 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 			 *================================================*/
 
 			/* initialization of backtracking line search */
-			FLOAT backtracking_t = 1.0f;
-			FLOAT bt_cost_now;
+			double backtracking_t = 1.0f;
+			double bt_cost_now;
 
 			//f(x)
-			FLOAT bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
+			double bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
 			                       b_inequality, qp->phase1.beta, s_min_now);
 			//f(x) + (a * t * D1_f(x).' * D1_f(x))
-			FLOAT bt_cost_alpha_line = 0;
+			double bt_cost_alpha_line = 0;
 			//(a * t * D1_f(x).' * D1_f(x))
-			FLOAT alpha_line_change = 0;
+			double alpha_line_change = 0;
 
 			/* backtracking line search loop */
 			while(1) {
@@ -536,7 +536,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 
 			qp->phase1.iters++;
 
-			FLOAT resid = vector_residual(x_prime, x_prime_last);
+			double resid = vector_residual(x_prime, x_prime_last);
 
 			DEBUG_PRINT_MATRIX(*D1_f0);
 			DEBUG_PRINT_MATRIX(*D1_phi_x);
@@ -602,13 +602,13 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	}
 #endif
 
-	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
+	const double epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
 	int i, j;
 
 	//log barrier's parameter
-	FLOAT t = qp->phase2.t_init;
+	double t = qp->phase2.t_init;
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
@@ -637,9 +637,9 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	vector_t *newton_step = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	FLOAT fi = 0;
-	FLOAT div_fi = 0;
-	FLOAT div_fi_squared = 0;
+	double fi = 0;
+	double div_fi = 0;
+	double div_fi_squared = 0;
 
 	/* inequality constraint matrix (lower bound + upper bound + affine inequality) */
 	int lb_size = (solve_lower_bound == true) ? qp->lb->row : 0;
@@ -762,7 +762,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			matrix_add(x_last, newton_step, qp->x);
 
 			qp->phase2.iters++;
-			FLOAT resid = vector_residual(qp->x, x_last);
+			double resid = vector_residual(qp->x, x_last);
 
 			DEBUG_PRINT_MATRIX(*D1_phi);
 			DEBUG_PRINT_MATRIX(*D2_phi);
@@ -801,7 +801,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
-	const FLOAT epsilon = 1e-14; //increase numerical stability of divide by zero
+	const double epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
 	int i, j;
@@ -826,8 +826,8 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	}
 
 	//log barrier's parameter
-	FLOAT t = qp->phase1.t_init;
-	FLOAT div_by_t;
+	double t = qp->phase1.t_init;
+	double div_by_t;
 
 	//new optimization vector = original vector + slack variable s
 	matrix_t *z_prime = matrix_zeros(qp->x->row + 1, qp->x->column);
@@ -848,8 +848,8 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	matrix_t *D1_phi_tilde_z = matrix_new(qp->x->row, qp->x->column);
 
 	/* i-th inenquality constraint function */
-	FLOAT fi = 0;
-	FLOAT div_fi = 0;
+	double fi = 0;
+	double div_fi = 0;
 
 	//gradient descent step
 	vector_t *descent_step = matrix_new(qp->x->row + 1, qp->x->column);
@@ -919,7 +919,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
 	for(r = (R->row - 1); r >= 0; r--) {
-		FLOAT norm = 0;
+		double norm = 0;
 		for(c = 0; c < R->column; c++) {
 			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
 		}
@@ -941,7 +941,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	/*============================================*
 	 * initialize the inequality slack variable s *
 	 *============================================*/
-	FLOAT fi_max = 0;
+	double fi_max = 0;
 
 	/* initial value of fi_max */
 	for(j = 0; j < A_inequality->column - 1; j++) {
@@ -967,7 +967,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	matrix_at(z_prime, z_prime->row - 1, 0) = fi_max + qp->phase1.s_margin;
 
 	//lower bound of s can be for now (avoiding s cross over the inequality constraints of x)
-	FLOAT s_min_now = fi;
+	double s_min_now = fi;
 
 	/*====================*
 	 * optimization start *
@@ -1048,8 +1048,8 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			 *================================================*/
 
 			/* initialization of backtracking line search */
-			FLOAT backtracking_t = 1.0f;
-			FLOAT bt_cost_now;
+			double backtracking_t = 1.0f;
+			double bt_cost_now;
 
 			//copy z from z_prime (XXX: this code could be optmized)
 			for(r = 0; r < z->row; r++) {
@@ -1067,12 +1067,12 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			    matrix_at(z_prime, z_prime->row - 1, 0);
 
 			//f(x)
-			FLOAT bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
+			double bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
 			                       b_inequality, qp->phase1.beta, s_min_now);
 			//f(x) + (a * t * D1_f(x).' * D1_f(x))
-			FLOAT bt_cost_alpha_line = 0;
+			double bt_cost_alpha_line = 0;
 			//(a * t * D1_f(x).' * D1_f(x))
-			FLOAT alpha_line_change = 0;
+			double alpha_line_change = 0;
 
 			/* backtracking line search loop */
 			while(1) {
@@ -1151,7 +1151,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 			qp->phase1.iters++;
 
-			FLOAT resid = vector_residual(z_prime, z_prime_last);
+			double resid = vector_residual(z_prime, z_prime_last);
 
 			DEBUG_PRINT_MATRIX(*D1_f0);
 			DEBUG_PRINT_MATRIX(*D1_phi_z);
@@ -1222,7 +1222,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	/* increase numerical stability */
 	//avoid divide by zero
-	const FLOAT epsilon = 1e-14;
+	const double epsilon = 1e-14;
 	//avoid inversion of singular matrix
 	matrix_t *epsilon_matrix = matrix_new(qp->x->row, qp->x->row);
 	for(r = 0; r < epsilon_matrix->row; r++) {
@@ -1232,7 +1232,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	}
 
 	//log barrier's parameter
-	FLOAT t = qp->phase2.t_init;
+	double t = qp->phase2.t_init;
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
@@ -1295,9 +1295,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	}
 
 	/* i-th inenquality constraint function */
-	FLOAT fi = 0;
-	FLOAT div_fi = 0;
-	FLOAT div_fi_squared = 0;
+	double fi = 0;
+	double div_fi = 0;
+	double div_fi_squared = 0;
 
 	/*========================================================*
 	 * eliminate equality constraints by null space transform *
@@ -1349,7 +1349,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	/* calculate the zeros row count of R matrix */
 	int n_zero_cols = 0;
 	for(r = (R->row - 1); r >= 0; r--) {
-		FLOAT norm = 0;
+		double norm = 0;
 		for(c = 0; c < R->column; c++) {
 			norm += matrix_at(R, r, c) * matrix_at(R, r, c);
 		}
@@ -1465,7 +1465,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 			qp->phase2.iters++;
 
-			FLOAT resid = vector_residual(qp->x, x_last);
+			double resid = vector_residual(qp->x, x_last);
 
 			DEBUG_PRINT_MATRIX(*Q);
 			DEBUG_PRINT_MATRIX(*R);

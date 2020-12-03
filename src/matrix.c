@@ -11,7 +11,7 @@ int matrix_rank(matrix_t* mat)
 	matrix_copy(mat_copy, mat);
 
 	int rank = 0;
-	FLOAT epsilon = 1e-6;
+	double epsilon = 1e-6;
 
 	matrix_t *S = matrix_new(mat_copy->column, 1);
 	matrix_t *superb = matrix_new(mat_copy->column, 1);
@@ -47,7 +47,7 @@ int matrix_rank(matrix_t* mat)
 
 void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 {
-	memcpy(X->data, B->data, sizeof(FLOAT) * X->row * X->column);
+	memcpy(X->data, B->data, sizeof(double) * X->row * X->column);
 
 	int *pivots = (int *)malloc(sizeof(int) * A->row);
 	GESV(LAPACK_ROW_MAJOR, A->row, X->column,
@@ -70,7 +70,7 @@ void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret)
 	}
 
 	int m = A->row, n = A->column;
-	FLOAT *tau = (FLOAT *)malloc(sizeof(FLOAT) * rank);
+	double *tau = (double *)malloc(sizeof(double) * rank);
 
 	matrix_copy(R, A);
 	GEQRF(LAPACK_ROW_MAJOR, m, n, R->data, n, tau);
@@ -99,7 +99,7 @@ void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret)
 	*R_ret = R;
 }
 
-void matrix_construct(matrix_t *mat, int r, int c, FLOAT *data)
+void matrix_construct(matrix_t *mat, int r, int c, double *data)
 {
 	mat->row = r;
 	mat->column = c;
@@ -112,7 +112,7 @@ matrix_t* matrix_new(int r, int c)
 
 	mat->row = r;
 	mat->column = c;
-	mat->data = (FLOAT *)malloc(sizeof(FLOAT) * r * c);
+	mat->data = (double *)malloc(sizeof(double) * r * c);
 
 	return mat;
 }
@@ -123,7 +123,7 @@ matrix_t* matrix_zeros(int r, int c)
 
 	mat->row = r;
 	mat->column = c;
-	mat->data = (FLOAT *)calloc(r * c, sizeof(FLOAT));
+	mat->data = (double *)calloc(r * c, sizeof(double));
 
 	return mat;
 }
@@ -146,7 +146,7 @@ void matrix_reset_zeros(matrix_t *mat)
 
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 {
-	memcpy(mat_inv->data, mat->data, sizeof(FLOAT) * mat_inv->row * mat_inv->column);
+	memcpy(mat_inv->data, mat->data, sizeof(double) * mat_inv->row * mat_inv->column);
 
 	int *pivots = (int *)malloc(sizeof(int) * mat->row);
 
@@ -222,7 +222,7 @@ void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
 	}
 }
 
-void matrix_scaling(FLOAT scaler, matrix_t *in, matrix_t *out)
+void matrix_scaling(double scaler, matrix_t *in, matrix_t *out)
 {
 	int r, c;
 	for(r = 0; r < out->row; r++) {
@@ -232,7 +232,7 @@ void matrix_scaling(FLOAT scaler, matrix_t *in, matrix_t *out)
 	}
 }
 
-void matrix_scale_by(FLOAT scaler, matrix_t *mat)
+void matrix_scale_by(double scaler, matrix_t *mat)
 {
 	int r, c;
 	for(r = 0; r < mat->row; r++) {
@@ -242,10 +242,10 @@ void matrix_scale_by(FLOAT scaler, matrix_t *mat)
 	}
 }
 
-FLOAT vector_residual(vector_t *vec1, vector_t *vec2)
+double vector_residual(vector_t *vec1, vector_t *vec2)
 {
-	FLOAT sum_of_squared = 0;
-	FLOAT diff;
+	double sum_of_squared = 0;
+	double diff;
 
 	int r;
 	for(r = 0; r < vec1->row; r++) {
@@ -256,9 +256,9 @@ FLOAT vector_residual(vector_t *vec1, vector_t *vec2)
 	return sqrt(sum_of_squared);
 }
 
-FLOAT vector_norm(vector_t *vec)
+double vector_norm(vector_t *vec)
 {
-	FLOAT sum_of_squared = 0;
+	double sum_of_squared = 0;
 
 	int r;
 	for(r = 0; r < vec->row; r++) {
@@ -282,7 +282,7 @@ void print_matrix(char *prompt, matrix_t *mat)
 	}
 }
 
-void print_var(char *prompt, FLOAT var)
+void print_var(char *prompt, double var)
 {
 	printf("%s (1x1) = \n   %f\n", prompt, var);
 }

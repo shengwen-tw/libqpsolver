@@ -28,11 +28,6 @@
  * select lapack/cblas helper function according to the  *
  * precision of the floating-point data type             *
  *=======================================================*/
-#if (FLOAT_PRECISION == USE_FLOAT)
-#define FLOAT float
-#elif (FLOAT_PRECISION == USE_DOUBLE)
-#define FLOAT double
-#endif
 
 #if (FLOAT_PRECISION == USE_FLOAT)
 #define GESV LAPACKE_sgesv

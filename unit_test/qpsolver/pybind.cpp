@@ -9,7 +9,7 @@
 using namespace std;
 namespace py = pybind11;
 
-using pyarray = std::optional<py::array_t<FLOAT>>;
+using pyarray = std::optional<py::array_t<double>>;
 
 bool unit_test_debug_print = false;
 
@@ -60,23 +60,23 @@ bool convert_np_array_to_matrix(matrix_t **mat, pyarray &py_arr)
 	return true;
 }
 
-py::array_t<FLOAT> convert_np_array_to_matrix(matrix_t *mat)
+py::array_t<double> convert_np_array_to_matrix(matrix_t *mat)
 {
 	unsigned long n_row = mat->row;
 	unsigned long n_column = mat->column;
 
 	auto buf_info =
 	    py::buffer_info(mat->data,
-	                    sizeof(FLOAT),
-	                    py::format_descriptor<FLOAT>::format(),
+	                    sizeof(double),
+	                    py::format_descriptor<double>::format(),
 	                    2,
 	                    std::vector<size_t> {n_row, n_column},
-	                    std::vector<size_t> {n_column * sizeof(FLOAT), sizeof(FLOAT)}
+	                    std::vector<size_t> {n_column * sizeof(double), sizeof(double)}
 	                   );
-	return py::array_t<FLOAT>(buf_info);
+	return py::array_t<double>(buf_info);
 }
 
-py::array_t<FLOAT> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
+py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
                                pyarray A_numpy,    pyarray b_numpy,
                                pyarray A_eq_numpy, pyarray b_eq_numpy,
                                pyarray lb_numpy,   pyarray ub_numpy)
