@@ -32,10 +32,10 @@ void qp_set_default(qp_t *qp)
 	/* parameters of phase2 (quadratic programming) solver */
 	qp->phase2.iters = 0;
 	qp->phase2.eps = 1e-6;         //residual value to stop the gradient descent inner loop
-	qp->phase2.mu = 1.5;           //stiffness growth rate of the log barrier function
+	qp->phase2.mu = 1.2;           //stiffness growth rate of the log barrier function
 	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier (0.01)
-	qp->phase2.t_max = 50000;      //maximum stiffness of the log barrier
-	qp->phase2.max_iters = 100000; //maximum iteration times
+	qp->phase2.t_max = 10000;      //maximum stiffness of the log barrier
+	qp->phase2.max_iters = 10000;  //maximum iteration times
 }
 
 void qp_config_phase1(qp_t *qp, phase1_param *phase1_config)

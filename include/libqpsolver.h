@@ -12,7 +12,7 @@
  *====================================*/
 #define USE_FLOAT  0
 #define USE_DOUBLE 1
-#define FLOAT_PRECISION USE_FLOAT
+#define FLOAT_PRECISION USE_DOUBLE
 
 /*===========================================*
  * enable infeasible start (phase1) function *
