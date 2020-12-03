@@ -8,6 +8,8 @@ import os
 import numpy as np
 from cvxopt import matrix, solvers
 
+test_failed_counter = 0
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -119,14 +121,20 @@ def test_random_2x2_qp_problem(cost_func_max_val):
         print(f"{bcolors.OKGREEN}\n[unit test passed]{bcolors.ENDC}")
     else:
         print(f"{bcolors.FAIL}\n[error, unit test did not passed]{bcolors.ENDC}")
+        test_failed_counter = test_failed_counter + 1
 
     print('=============================================================')
 
     return test_result
 
+def test_libqpsolver():
+    for i in range(0, 50):
+        test_random_2x2_qp_problem(100)
+        test_random_2x2_qp_problem(500)
+        test_random_2x2_qp_problem(1000)
+
 def main():
-    test_random_2x2_qp_problem(100)
-    test_random_2x2_qp_problem(500)
-    test_random_2x2_qp_problem(1000)
+    test_libqpsolver()
+    print('unit test failed times: %d' %(test_failed_counter))
 
 if __name__ == "__main__": main()
