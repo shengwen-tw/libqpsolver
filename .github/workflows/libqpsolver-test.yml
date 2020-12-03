@@ -44,6 +44,6 @@ jobs:
            
     - name: Run unit test
       run: |
-          ls
+          pip3 install pybind11
           cd libqpsolver
           make unit_test
