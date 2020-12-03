@@ -92,8 +92,13 @@ def test_random_2x2_qp_problem(cost_func_max_val):
     b = np.array([[2.0],
                   [2.0],
                   [3.0]])
-    A_eq = np.array([[1.0, 1.0]])
-    b_eq = np.array([[0.0]])
+
+    #randomlly turn on / off the equality constraints
+    A_eq = None;
+    b_eq = None;
+    if np.random.rand(1, 1) < 0.5:
+        A_eq = np.array([[1.0, 1.0]])
+        b_eq = np.array([[0.0]])
 
     print('[Test input matrices]')
     print('P = \n%s' %(P))
