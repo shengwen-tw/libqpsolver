@@ -584,8 +584,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 {
 	VERBOSE_PRINT("[solver] problem type: inequality constrained QP\n");
 
-	qp_solve_no_constraint_problem(qp);
-
 #if (ENABLE_INFEASIBLE_START != 0)
 	bool feasible = qp_start_point_feasibility_check(qp);
 
@@ -1200,9 +1198,6 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
         bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] problem type: equality and inequality constrained QP\n");
-
-
-	qp_solve_no_constraint_problem(qp);
 
 #if (ENABLE_INFEASIBLE_START != 0)
 	bool feasible = qp_start_point_feasibility_check(qp);
