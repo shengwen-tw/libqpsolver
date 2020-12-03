@@ -41,3 +41,9 @@ jobs:
            MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_intel_lp64.so
            MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_sequential.so
            export LD_PRELOAD=$MKL_LIBS
+           
+    - name: Run unit test
+      run: |
+          ls
+          cd libqpsolver
+          make unit_test
