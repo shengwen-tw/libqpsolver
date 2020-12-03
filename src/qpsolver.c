@@ -260,8 +260,8 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 }
 
 static double qp_phase1_cost_function(double t, matrix_t *x_prime,
-                                     matrix_t *A_inequality, matrix_t* b_inequality,
-                                     double beta, double s_min)
+                                      matrix_t *A_inequality, matrix_t* b_inequality,
+                                      double beta, double s_min)
 {
 	int r, c;
 
@@ -472,7 +472,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 
 			//f(x)
 			double bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
-			                       b_inequality, qp->phase1.beta, s_min_now);
+			                        b_inequality, qp->phase1.beta, s_min_now);
 			//f(x) + (a * t * D1_f(x).' * D1_f(x))
 			double bt_cost_alpha_line = 0;
 			//(a * t * D1_f(x).' * D1_f(x))
@@ -1068,7 +1068,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 			//f(x)
 			double bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
-			                       b_inequality, qp->phase1.beta, s_min_now);
+			                        b_inequality, qp->phase1.beta, s_min_now);
 			//f(x) + (a * t * D1_f(x).' * D1_f(x))
 			double bt_cost_alpha_line = 0;
 			//(a * t * D1_f(x).' * D1_f(x))

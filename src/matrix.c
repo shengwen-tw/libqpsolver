@@ -16,20 +16,20 @@ int matrix_rank(matrix_t* mat)
 	matrix_t *S = matrix_new(mat_copy->column, 1);
 	matrix_t *superb = matrix_new(mat_copy->column, 1);
 
-	GESVD(LAPACK_ROW_MAJOR,
-	      'N',
-	      'N',
-	      mat_copy->row,
-	      mat_copy->column,
-	      mat_copy->data,
-	      mat_copy->column,
-	      S->data,
-	      NULL,
-	      mat_copy->row,
-	      NULL,
-	      mat_copy->column,
-	      superb->data
-	     );
+	LAPACKE_dgesvd(LAPACK_ROW_MAJOR,
+	               'N',
+	               'N',
+	               mat_copy->row,
+	               mat_copy->column,
+	               mat_copy->data,
+	               mat_copy->column,
+	               S->data,
+	               NULL,
+	               mat_copy->row,
+	               NULL,
+	               mat_copy->column,
+	               superb->data
+	              );
 
 	int r;
 	for(r = 0; r < S->row; r++) {
@@ -50,8 +50,8 @@ void solve_linear_system(matrix_t *A, matrix_t *X, matrix_t *B)
 	memcpy(X->data, B->data, sizeof(double) * X->row * X->column);
 
 	int *pivots = (int *)malloc(sizeof(int) * A->row);
-	GESV(LAPACK_ROW_MAJOR, A->row, X->column,
-	     A->data, A->column, pivots, X->data, X->column);
+	LAPACKE_dgesv(LAPACK_ROW_MAJOR, A->row, X->column,
+	              A->data, A->column, pivots, X->data, X->column);
 	free(pivots);
 }
 
@@ -73,11 +73,11 @@ void matrix_qr_factorization(matrix_t *A, matrix_t **Q_ret, matrix_t **R_ret)
 	double *tau = (double *)malloc(sizeof(double) * rank);
 
 	matrix_copy(R, A);
-	GEQRF(LAPACK_ROW_MAJOR, m, n, R->data, n, tau);
+	LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, m, n, R->data, n, tau);
 
 	matrix_t *Q_packed = matrix_new(A->row, A->column);
 	matrix_copy(Q_packed, R);
-	ORGQR(LAPACK_ROW_MAJOR, m, rank, rank, Q_packed->data, n, tau);
+	LAPACKE_dorgqr(LAPACK_ROW_MAJOR, m, rank, rank, Q_packed->data, n, tau);
 
 	//Q matrix
 	int r, c;
@@ -151,11 +151,11 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 	int *pivots = (int *)malloc(sizeof(int) * mat->row);
 
 	//solve matrix inversion by LU decomposition
-	GETRF(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->column, mat_inv->data,
-	      mat_inv->column, pivots);
+	LAPACKE_dgetrf(LAPACK_ROW_MAJOR, mat_inv->row, mat_inv->column, mat_inv->data,
+	               mat_inv->column, pivots);
 
-	GETRI(LAPACK_ROW_MAJOR, mat_inv->row,  mat_inv->data,
-	      mat_inv->column, pivots);
+	LAPACKE_dgetri(LAPACK_ROW_MAJOR, mat_inv->row,  mat_inv->data,
+	               mat_inv->column, pivots);
 	free(pivots);
 }
 
@@ -203,10 +203,10 @@ void matrix_sub(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 
 void matrix_multiply(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
 {
-	GEMM(CblasRowMajor, CblasNoTrans, CblasNoTrans, mat_result->row,
-	     mat_result->column, mat2->row, 1, mat1->data, mat2->row,
-	     mat2->data, mat_result->column, 0, mat_result->data,
-	     mat_result->column);
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, mat_result->row,
+	            mat_result->column, mat2->row, 1, mat1->data, mat2->row,
+	            mat2->data, mat_result->column, 0, mat_result->data,
+	            mat_result->column);
 }
 
 void matrix_transpose(matrix_t *mat, matrix_t *trans_mat)
