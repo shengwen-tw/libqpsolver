@@ -122,6 +122,8 @@ def test_random_2x2_qp_problem(cost_func_max_val):
 
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
+    global test_failed_counter
+
     if test_result == True:
         print(f"{bcolors.OKGREEN}\n[unit test passed]{bcolors.ENDC}")
     else:
