@@ -3,6 +3,9 @@
 #include <math.h>
 #include "qpsolver.h"
 
+/* prevent numerical instability from dividing by zero */
+#define EPSILON (1e-15)
+
 void qp_set_default(qp_t *qp)
 {
 	qp->x = NULL;
@@ -297,8 +300,6 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
-	const double epsilon = 1e-14; //increase numerical stability of divide by zero
-
 	int r, c;
 	int i, j;
 
@@ -432,7 +433,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 				}
 				fi = fi - matrix_at(b_inequality, r, 0) -
 				     matrix_at(x_prime, x_prime->row-1, 0);
-				div_fi = -1 / (fi + epsilon);
+				div_fi = -1 / (fi + EPSILON);
 
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi_x->row - 1; i++) {
@@ -447,12 +448,12 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 
 			//stop minimization when s is negative enough
 			fi = matrix_at(x_prime, x_prime->row - 1, 0) - qp->phase1.beta;
-			div_fi = -1.0 / (fi + epsilon);
+			div_fi = -1.0 / (fi + EPSILON);
 			matrix_at(D1_phi_s, qp->x->row, 0) = div_by_t * div_fi;
 
 			//avoiding s cross over the inequality constraints of x
 			fi = matrix_at(x_prime, x_prime->row - 1, 0) - s_min_now;
-			div_fi = -1.0 / (fi + epsilon);
+			div_fi = -1.0 / (fi + EPSILON);
 			matrix_at(D1_phi_s, qp->x->row, 0) += div_by_t * div_fi;
 
 			/* combine first derivative of objective function and log barriers */
@@ -599,8 +600,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	}
 #endif
 
-	const double epsilon = 1e-14; //increase numerical stability of divide by zero
-
 	int r, c;
 	int i, j;
 
@@ -703,8 +702,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 					fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
 				}
 				fi -= matrix_at(b_inequality, r, 0);
-				div_fi = -1 / (fi + epsilon);
-				div_fi_squared = 1 / ((fi * fi) + epsilon);
+				div_fi = -1 / (fi + EPSILON);
+				div_fi_squared = 1 / ((fi * fi) + EPSILON);
 
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi->row; i++) {
@@ -797,8 +796,6 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
         bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
-
-	const double epsilon = 1e-14; //increase numerical stability of divide by zero
 
 	int r, c;
 	int i, j;
@@ -1008,7 +1005,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				}
 				fi = fi - matrix_at(b_inequality, r, 0) -
 				     matrix_at(z_prime, z_prime->row-1, 0);
-				div_fi = -1 / (fi + epsilon);
+				div_fi = -1 / (fi + EPSILON);
 
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi_z->row - 1; i++) {
@@ -1024,12 +1021,12 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 			//stop minimization when s is negative enough
 			fi = matrix_at(z_prime, z_prime->row - 1, 0) - qp->phase1.beta;
-			div_fi = -1.0 / (fi + epsilon);
+			div_fi = -1.0 / (fi + EPSILON);
 			matrix_at(D1_phi_s, qp->x->row, 0) = div_by_t * div_fi;
 
 			//avoiding s cross over the inequality constraints of x
 			fi = matrix_at(z_prime, z_prime->row - 1, 0) - s_min_now;
-			div_fi = -1.0 / (fi + epsilon);
+			div_fi = -1.0 / (fi + EPSILON);
 			matrix_at(D1_phi_s, qp->x->row, 0) += div_by_t * div_fi;
 
 			/* combine first derivative of objective function and log barriers */
@@ -1217,14 +1214,11 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	int r, c;
 	int i, j;
 
-	/* increase numerical stability */
-	//avoid divide by zero
-	const double epsilon = 1e-14;
 	//avoid inversion of singular matrix
-	matrix_t *epsilon_matrix = matrix_new(qp->x->row, qp->x->row);
-	for(r = 0; r < epsilon_matrix->row; r++) {
-		for(c = 0; c < epsilon_matrix->column; c++) {
-			matrix_at(epsilon_matrix, r, c) = epsilon;
+	matrix_t *EPSILON_matrix = matrix_new(qp->x->row, qp->x->row);
+	for(r = 0; r < EPSILON_matrix->row; r++) {
+		for(c = 0; c < EPSILON_matrix->column; c++) {
+			matrix_at(EPSILON_matrix, r, c) = EPSILON;
 		}
 	}
 
@@ -1397,8 +1391,8 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 					fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
 				}
 				fi -= matrix_at(b_inequality, r, 0);
-				div_fi = -1 / (fi + epsilon);
-				div_fi_squared = 1 / ((fi * fi) + epsilon);
+				div_fi = -1 / (fi + EPSILON);
+				div_fi_squared = 1 / ((fi * fi) + EPSILON);
 
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi->row; i++) {
@@ -1445,7 +1439,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			matrix_multiply(F_t, D2_f0_F, D2_f_tilde);
 
 			//calculate newton step
-			matrix_add_by(D2_f_tilde, epsilon_matrix); //increase numerical stability
+			matrix_add_by(D2_f_tilde, EPSILON_matrix); //increase numerical stability
 			matrix_inverse(D2_f_tilde, D2_f_tilde_inv);
 			matrix_multiply(D2_f_tilde_inv, D1_f_tilde, newton_step);
 			matrix_scale_by(-1, newton_step);
