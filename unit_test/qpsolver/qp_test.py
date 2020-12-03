@@ -8,6 +8,17 @@ import os
 import numpy as np
 from cvxopt import matrix, solvers
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     """
     qp solver provided by cvxopt package:
@@ -37,10 +48,10 @@ def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
 
     #solve qp
     sol = solvers.qp(P, q, A, b, A_eq, b_eq, options);
-    return np.array(sol['x']);
+    return np.array(sol['x'])
 
 def matrix_compare(mat1, mat2):
-    epsilon = 1e-3;
+    epsilon = 1 #1e-3
 
     if len(mat1) != len(mat2):
         print('dimension of matrices are not equal for comparasion')
@@ -105,9 +116,9 @@ def test_random_2x2_qp_problem(cost_func_max_val):
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
     if test_result == True:
-        print('\n[unit test passed]')
+        print(f"{bcolors.OKGREEN}\n[unit test passed]{bcolors.ENDC}")
     else:
-        print('\n[error, unit test did not passed]')
+        print(f"{bcolors.FAIL}\n[error, unit test did not passed]{bcolors.ENDC}")
 
     print('=============================================================')
 
