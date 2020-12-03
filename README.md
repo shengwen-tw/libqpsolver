@@ -1,12 +1,17 @@
 # libqpsolver
 
-A quadratic programming solving library written in C
+A quadratic programming solver library written in C
+
+## Algorithm
+
+The libqpsolver use **Primal Interior Point Method** to solve quadratic programming problems based on Chapter 9 to 11 of [Convex Optimization](https://web.stanford.edu/~boyd/cvxbook/) by Stephen Boyd and Lieven Vandenberghe
 
 ## Features
 
-1. Solving quadratic programming problem with or without equality, inequality, lower bound and upper bound constraints
-2. Primal based interrior point method (log barrier method)
-3. Support infeasible start with basic phase1 method
+1. Support solving quadratic programming problems with or without equality, inequality, lower bound and upper bound constraints
+2. Based on Primal Interrior Point Method
+3. Support infeasible start with basic phase1 method (Not yet been fully tested)
+4. Based on Intel Math Kernel Libray (Planed to support OpenBLAS in the future)
 
 ## Prerequisite
 
