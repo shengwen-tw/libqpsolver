@@ -166,9 +166,6 @@ static void qp_solve_no_constraint_problem(qp_t *qp)
 		matrix_at(q, i, 0) *= -1;
 	}
 
-	PRINT_MATRIX(*P);
-	PRINT_MATRIX(*q);
-
 	/* solve Px = -q */
 	solve_linear_system(P, qp->x, q);
 
