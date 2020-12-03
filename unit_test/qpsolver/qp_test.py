@@ -142,4 +142,9 @@ def main():
     test_libqpsolver()
     print('unit test failed times: %d' %(test_failed_counter))
 
+    if test_failed_counter > 0:
+        exit(1)
+    else:
+        exit(0)
+
 if __name__ == "__main__": main()
