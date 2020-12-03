@@ -8,8 +8,6 @@ import os
 import numpy as np
 from cvxopt import matrix, solvers
 
-test_failed_counter = 0
-
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -53,15 +51,15 @@ def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     return np.array(sol['x'])
 
 def matrix_compare(mat1, mat2):
-    epsilon = 1 #1e-3
-
     if len(mat1) != len(mat2):
         print('dimension of matrices are not equal for comparasion')
         return False;
 
     for i in range(len(mat1)):
-        abs_diff = abs(mat1[i] - mat2[i])
-        if abs_diff > epsilon:
+        error_percentage = abs(mat1[i] - mat2[i]) / abs(mat1[i])
+
+        #tolerate of 5% of error
+        if error_percentage > 0.05:
             return False
 
     return True
@@ -128,7 +126,7 @@ def test_random_2x2_qp_problem(cost_func_max_val):
         print(f"{bcolors.OKGREEN}\n[unit test passed]{bcolors.ENDC}")
     else:
         print(f"{bcolors.FAIL}\n[error, unit test did not passed]{bcolors.ENDC}")
-        test_failed_counter = test_failed_counter + 1
+        exit(1)
 
     print('=============================================================')
 
@@ -142,11 +140,6 @@ def test_libqpsolver():
 
 def main():
     test_libqpsolver()
-    print('unit test failed times: %d' %(test_failed_counter))
-
-    if test_failed_counter > 0:
-        exit(1)
-    else:
-        exit(0)
+    print('successfully ran all unit tests')
 
 if __name__ == "__main__": main()
