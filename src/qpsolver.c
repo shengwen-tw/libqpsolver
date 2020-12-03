@@ -33,9 +33,9 @@ void qp_set_default(qp_t *qp)
 	qp->phase2.iters = 0;
 	qp->phase2.eps = 1e-6;         //residual value to stop the gradient descent inner loop
 	qp->phase2.mu = 1.5;           //stiffness growth rate of the log barrier function
-	qp->phase2.t_init = 0.01;      //initial stiffness of the log barrier
+	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier (0.01)
 	qp->phase2.t_max = 50000;      //maximum stiffness of the log barrier
-	qp->phase2.max_iters = 10000;  //maximum iteration times
+	qp->phase2.max_iters = 100000; //maximum iteration times
 }
 
 void qp_config_phase1(qp_t *qp, phase1_param *phase1_config)
@@ -154,14 +154,26 @@ static void qp_solve_no_constraint_problem(qp_t *qp)
 	/* the closed form solution is given by setting the first derivative equal
 	 * to zero, i.e: Px = -q */
 
+	matrix_t *P = matrix_new(qp->P->row, qp->P->column);
+	matrix_t *q = matrix_new(qp->q->row, qp->q->column);
+
+	matrix_copy(P, qp->P);
+	matrix_copy(q, qp->q);
+
 	/* construct -q vector */
-	int r;
-	for(r = 0; r < qp->q->row; r++) {
-		qp->q->data[r] *= -1;
+	int i;
+	for(i = 0; i < q->row; i++) {
+		matrix_at(q, i, 0) *= -1;
 	}
 
+	PRINT_MATRIX(*P);
+	PRINT_MATRIX(*q);
+
 	/* solve Px = -q */
-	solve_linear_system(qp->P, qp->x, qp->q);
+	solve_linear_system(P, qp->x, q);
+
+	matrix_delete(P);
+	matrix_delete(q);
 }
 
 static void qp_solve_equality_constraint_problem(qp_t *qp)
@@ -571,6 +583,8 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
         bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] problem type: inequality constrained QP\n");
+
+	qp_solve_no_constraint_problem(qp);
 
 #if (ENABLE_INFEASIBLE_START != 0)
 	bool feasible = qp_start_point_feasibility_check(qp);
@@ -1186,6 +1200,9 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
         bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] problem type: equality and inequality constrained QP\n");
+
+
+	qp_solve_no_constraint_problem(qp);
 
 #if (ENABLE_INFEASIBLE_START != 0)
 	bool feasible = qp_start_point_feasibility_check(qp);
