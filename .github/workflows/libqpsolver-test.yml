@@ -46,5 +46,9 @@ jobs:
       run: |
           pip3 install numpy
           pip3 install pybind11
+          
+          git clone https://github.com/cvxopt/cvxopt.git
+          sudo python3 ./cvxopt/setup.py install
+          
           cd libqpsolver
           make unit_test
