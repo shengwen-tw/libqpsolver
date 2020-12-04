@@ -253,7 +253,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 
 	/* free mallocs */
 	matrix_delete(KKT);
-	matrix_delete(KKT);
+	matrix_delete(kkt_sol);
 	matrix_delete(qb_vec);
 }
 
