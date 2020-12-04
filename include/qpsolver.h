@@ -20,18 +20,16 @@
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #endif
 
-enum {
-	QP_SUCCESS_SOLVED,
-	QP_ERROR_NO_OPTIMIZATION_VARIABLE,
-	QP_ERROR_NO_OBJECTIVE_FUNCTION,
-	QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT,
-	QP_ERROR_INCOMPLETE_INEQUAILITY_CONSTRAINT
-} QP_RETURN_STATE;
+/* return state of qp solver */
+#define QP_SUCCESS_SOLVED                          0
+#define QP_ERROR_NO_OPTIMIZATION_VARIABLE          1
+#define QP_ERROR_NO_OBJECTIVE_FUNCTION             2
+#define QP_ERROR_INCOMPLETE_EQUAILITY_CONSTRAINT   3
+#define QP_ERROR_INCOMPLETE_INEQUAILITY_CONSTRAINT 4
 
-enum {
-	QP_PHASE1_FEASIBLE,
-	QP_PHASE1_INFEASIBLE
-} QP_PHASE1_RETVAL;
+/* return state of phase1 (feasibility) solver */
+#define QP_PHASE1_FEASIBLE   0
+#define QP_PHASE1_INFEASIBLE 1
 
 typedef struct {
 	/* slack variable parameters for feasibility problem */

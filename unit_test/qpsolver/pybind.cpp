@@ -141,13 +141,17 @@ py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 	}
 
     double start_time = time();
-    qp_solve_start(&qp);
+    int qp_ret = qp_solve_start(&qp);
     double end_time = time();
 
 	if(unit_test_debug_print == true) {
-		printf("the optimal solution of the problem is:\n");
+        if(qp_ret == QP_SUCCESS_SOLVED) {
+		    printf("the optimal solution of the problem is:\n");
+            test_print_matrix("x", x);
+        } else {
+            printf("unable to solve the problem!\n");
+        }
 	}
-	test_print_matrix("x", x);
 
     printf("run time: %lf seconds\n"
            "phase1 stage took %d iterations\n"
