@@ -111,10 +111,10 @@ py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 		test_print_matrix("P", P);
 
 		if(has_q == true) {
-			qp_solve_set_cost_function(&qp, P, q, NULL);
+			qp_solve_set_cost_function(&qp, P, q);
 			test_print_matrix("q", q);
 		} else {
-			qp_solve_set_cost_function(&qp, P, NULL, NULL);
+			qp_solve_set_cost_function(&qp, P, NULL);
 		}
 	}
 

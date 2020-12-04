@@ -75,7 +75,6 @@ typedef struct {
 	/* cost function */
 	matrix_t *P;
 	vector_t *q;
-	vector_t *r;
 
 	/* equality constraint */
 	matrix_t *A_eq;
@@ -99,7 +98,7 @@ void qp_config_phase1(qp_t *qp, phase1_param *phase1_config);
 void qp_config_phase2(qp_t *qp, phase2_param *phase2_config);
 bool qp_start_point_feasibility_check(qp_t *qp);
 void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x);
-void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r);
+void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q);
 void qp_solve_set_equality_constraints(qp_t *qp, matrix_t *A, vector_t *b);
 void qp_solve_set_upper_bound_inequality_constraints(qp_t *qp, vector_t *ub);
 void qp_solve_set_lower_bound_inequality_constraints(qp_t *qp, vector_t *lb);

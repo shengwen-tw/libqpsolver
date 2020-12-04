@@ -11,7 +11,6 @@ void qp_set_default(qp_t *qp)
 	qp->x = NULL;
 	qp->P = NULL;
 	qp->q = NULL;
-	qp->r = NULL;
 	qp->A_eq = NULL;
 	qp->b_eq = NULL;
 	qp->lb = NULL;
@@ -121,11 +120,10 @@ void qp_solve_set_optimization_variable(qp_t *qp, vector_t *x)
 	qp->x = x;
 }
 
-void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q, vector_t *r)
+void qp_solve_set_cost_function(qp_t *qp, matrix_t *P, vector_t *q)
 {
 	qp->P = P;
 	qp->q = q;
-	qp->r = r;
 }
 
 void qp_solve_set_equality_constraints(qp_t *qp, matrix_t *A, vector_t *b)
