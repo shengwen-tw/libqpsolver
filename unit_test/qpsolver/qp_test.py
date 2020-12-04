@@ -149,10 +149,14 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
     b = None
     if np.random.rand(1, 1) < 0.5:
         A = np.identity(N)
-        b_max = 10.0
         b = np.zeros((N, 1))
+
         for i in range(N):
-            b[i, 0] = b_max * np.random.rand(1, 1)
+            while True:
+                ran = np.random.rand(1, 1)
+                if(ran > 0.1 and ran < 0.9):
+                    b[i, 0] =  N * ran
+                    break
 
     #randomlly turn on / off the equality constraints
     A_eq = None
@@ -199,31 +203,31 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
 
 
 def test_libqpsolver():
-    test_suite_exec_times = 5000
+    test_suite_exec_times = 1000
 
     for i in range(0, test_suite_exec_times):
         #test my specified 2x2 problems
         test_random_2x2_qp_problem(100)
         test_random_2x2_qp_problem(500)
         test_random_2x2_qp_problem(1000)
-        #test_random_2x2_qp_problem(10000)
+        test_random_2x2_qp_problem(10000)
 
         #test 3x3 problems with simple constraints
         test_random_NxN_qp_problem(3, 1000)
         test_random_NxN_qp_problem(3, 500)
         test_random_NxN_qp_problem(3, 1000)
-        #test_random_NxN_qp_problem(3, 10000)
+        test_random_NxN_qp_problem(3, 10000)
 
         #test 15x15 problems with simple constraints
         test_random_NxN_qp_problem(15, 1000)
         test_random_NxN_qp_problem(15, 500)
         test_random_NxN_qp_problem(15, 1000)
-        #test_random_NxN_qp_problem(15, 10000)
+        test_random_NxN_qp_problem(15, 10000)
 
         #test 50x50 problems with simple constraints
         test_random_NxN_qp_problem(50, 1000)
 
-    total_test_times = test_suite_exec_times * 15
+    total_test_times = test_suite_exec_times * 13
 
     correctness = (1.0 - (sol_diff_cnt / total_test_times)) * 100.0
 
@@ -231,7 +235,7 @@ def test_libqpsolver():
     print(f"-> %d of %d failed" %(sol_diff_cnt, total_test_times))
 
     #if error count exceed 1% of total test count, than the solver is not stable
-    if (sol_diff_cnt / total_test_times) > 0.1:
+    if (sol_diff_cnt / total_test_times) > 0.01:
         print(f"{bcolors.FAIL}[failed] correctness = %f%%{bcolors.ENDC}" %(correctness))
         print(f"{bcolors.FAIL}the solver is unstable due to the correctness is lower than 99%{bcolors.ENDC}")
         exit(1)
