@@ -32,7 +32,7 @@ def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     """
 
     #verbose option
-    #options = solvers.options['show_progress'] = False
+    options = solvers.options['show_progress'] = True
 
     #objective function
     P, q = matrix(P), matrix(q)
@@ -84,15 +84,18 @@ def generate_random_row_vector(row, max_val):
 
 def test_random_2x2_qp_problem(cost_func_max_val):
     P = generate_symmetric_positive_definite_matrix(2, 2, cost_func_max_val);
-
     q = generate_random_row_vector(2, cost_func_max_val)
 
-    A = np.array([[+1.0, +1.0],
-                  [-1.0, +2.0],
-                  [+2.0, +1.0]])
-    b = np.array([[2.0],
-                  [2.0],
-                  [3.0]])
+    #randomlly turn on / off the inequality constraints
+    A = None
+    b = None
+    if np.random.rand(1, 1) < 0.5:
+        A = np.array([[+1.0, +1.0],
+                      [-1.0, +2.0],
+                      [+2.0, +1.0]])
+        b = np.array([[2.0],
+                      [2.0],
+                      [3.0]])
 
     #randomlly turn on / off the equality constraints
     A_eq = None;
@@ -137,15 +140,90 @@ def test_random_2x2_qp_problem(cost_func_max_val):
 
     return test_result
 
+def test_random_NxN_qp_problem(N, cost_func_max_val):
+    P = generate_symmetric_positive_definite_matrix(N, N, cost_func_max_val);
+    q = generate_random_row_vector(N, cost_func_max_val)
+
+    #randomlly turn on / off the inequality constraints
+    A = None
+    b = None
+    if np.random.rand(1, 1) < 0.5:
+        A = np.identity(N)
+        b_max = 10.0
+        b = np.zeros((N, 1))
+        for i in range(N):
+            b[i, 0] = b_max * np.random.rand(1, 1)
+
+    #randomlly turn on / off the equality constraints
+    A_eq = None
+    b_eq = None
+    if np.random.rand(1, 1) < 0.5:
+        A_eq = np.ones((1, N));
+        b_eq = np.array([[0.0]])
+
+    print('[Test input matrices]')
+    print('P = \n%s' %(P))
+    print('q = \n%s' %(q))
+    print('A = \n%s' %(A))
+    print('b = \n%s' %(b))
+    print('A_eq = \n%s' %(A_eq))
+    print('b_eq = \n%s\n' %(b_eq))
+
+    print('[debug message from CVXOPT]')
+    cvxopt_sol = quadprog_cvxopt(P, q, A, b, A_eq, b_eq, None)
+
+    print('\n[debug message from libqpsolver]')
+    libqpsolver_sol = libqpsolver.quadprog(P, q, A, b, A_eq, b_eq, None, None)
+
+    print('\n[Optimal solution by CVXOPT]')
+    print(cvxopt_sol)
+
+    print('\n[Optimal solution by libqpsolver]')
+    print(libqpsolver_sol)
+
+    test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
+
+    global sol_diff_cnt
+    global curr_test_num
+    curr_test_num = curr_test_num + 1
+
+    if test_result == True:
+        print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
+    else:
+        print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
+        sol_diff_cnt = sol_diff_cnt + 1
+
+    print('===============================================================')
+
+    return test_result
+
+
 def test_libqpsolver():
-    test_suite_exec_times = 10000
+    test_suite_exec_times = 5000
 
     for i in range(0, test_suite_exec_times):
+        #test my specified 2x2 problems
         test_random_2x2_qp_problem(100)
         test_random_2x2_qp_problem(500)
         test_random_2x2_qp_problem(1000)
+        #test_random_2x2_qp_problem(10000)
 
-    total_test_times = test_suite_exec_times * 3
+        #test 3x3 problems with simple constraints
+        test_random_NxN_qp_problem(3, 1000)
+        test_random_NxN_qp_problem(3, 500)
+        test_random_NxN_qp_problem(3, 1000)
+        #test_random_NxN_qp_problem(3, 10000)
+
+        #test 15x15 problems with simple constraints
+        test_random_NxN_qp_problem(15, 1000)
+        test_random_NxN_qp_problem(15, 500)
+        test_random_NxN_qp_problem(15, 1000)
+        #test_random_NxN_qp_problem(15, 10000)
+
+        #test 50x50 problems with simple constraints
+        test_random_NxN_qp_problem(50, 1000)
+
+    total_test_times = test_suite_exec_times * 15
 
     correctness = (1.0 - (sol_diff_cnt / total_test_times)) * 100.0
 
