@@ -2,6 +2,8 @@
 
 A quadratic programming solver library written in C
 
+<img src="https://github.com/shengwen-tw/libqpsolver/blob/master/materials/qp.png?raw=true" width="18%" height="18%">
+
 ## Algorithm
 
 The libqpsolver use **Primal Interior Point Method** to solve quadratic programming problems based on Chapter 9 to 11 of [Convex Optimization](https://web.stanford.edu/~boyd/cvxbook/) by Stephen Boyd and Lieven Vandenberghe
