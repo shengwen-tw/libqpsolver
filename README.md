@@ -17,7 +17,7 @@ The libqpsolver use **Primal Interior Point Method** to solve quadratic programm
 
 ## Caveats
 
-1. The solver is designed for soving small size problems (with optimization variable smaller than 50)
+1. The solver is designed for solving small size problems (with optimization variable smaller than 50)
 2. The parameters need to be tweaked for the best performance and numerical stability depends on your own problems
 
 ## Prerequisite
