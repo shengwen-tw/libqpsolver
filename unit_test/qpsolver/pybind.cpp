@@ -153,10 +153,12 @@ py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
         }
 	}
 
-    printf("run time: %lf seconds\n"
-           "phase1 stage took %d iterations\n"
-           "phase2 stage took %d iterations\n",
-           end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
+    if(unit_test_debug_print == true) {
+        printf("run time: %lf seconds\n"
+               "phase1 stage took %d iterations\n"
+               "phase2 stage took %d iterations\n",
+               end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
+    }
 
 	return convert_np_array_to_matrix(x);
 }

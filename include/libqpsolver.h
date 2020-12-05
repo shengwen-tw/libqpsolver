@@ -4,7 +4,7 @@
 /*======================================*
  * enable internal debug message output *
  *======================================*/
-#define VERBOSE_MESSAGE 1
+#define VERBOSE_MESSAGE 0
 #define DEBUG_MESSAGE   0
 
 /*===========================================*

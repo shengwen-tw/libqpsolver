@@ -5,13 +5,26 @@ by launching the "run_test.sh"
 
 import libqpsolver
 import os
+import time
+import progressbar
 import numpy as np
 from cvxopt import matrix, solvers
 
+#unit test run time and test item numbers
+test_suite_exec_times = 10000
+test_suite_items = 13
+
+#show detailed unit test message
+verbose = False
+
+#global variables
 sol_diff_cnt = 0
 curr_test_num = 0
 
-verbose = False
+progress_cnt_max = test_suite_exec_times * test_suite_items
+progress =  \
+    progressbar.ProgressBar(maxval=progress_cnt_max, \
+        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 
 class bcolors:
     HEADER = '\033[95m'
@@ -223,9 +236,24 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
 
 
 def test_libqpsolver():
-    test_suite_exec_times = 1000
+    print(f"{bcolors.BOLD}libqpsolver unit test started{bcolors.ENDC}")
+
+    #progress bar
+    progress.start()
+    progress.update(0)
+
+    time_start = time.time()
+    time_last = time_start
 
     for i in range(0, test_suite_exec_times):
+        time_now = time.time()
+
+        #update the progress bar every 10 seconds
+        if (time_now - time_last) > 10:
+            time_last = time_now
+            progress.update(i * test_suite_items)
+            print('\nelapsed time: %d seconds' %(time_now - time_start))
+
         #test my specified 2x2 problems
         test_random_2x2_qp_problem(100)
         test_random_2x2_qp_problem(500)
@@ -246,6 +274,8 @@ def test_libqpsolver():
 
         #test 50x50 problems with simple constraints
         test_random_NxN_qp_problem(50, 1000)
+
+    progress.finish()
 
     total_test_times = test_suite_exec_times * 13
 
