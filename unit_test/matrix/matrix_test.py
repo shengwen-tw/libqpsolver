@@ -193,7 +193,7 @@ def unit_test_matrix_multiply(M, N, magnitude):
     mat1 = generate_random_matrix(M, N, magnitude);
     mat2 = generate_random_matrix(M, N, magnitude);
 
-    np_result = np.multiply(mat1, mat2)
+    np_result = np.matmul(mat1, mat2)
     my_result = matrix_wrapper.matrix_multiply(mat1, mat2);
 
     if verbose == True:
@@ -290,7 +290,7 @@ def unit_test_matrix_all_functions():
     unit_test_matrix_add(3, 3, 100)
     unit_test_matrix_add_by(3, 3, 100)
     unit_test_matrix_sub(3, 3, 100)
-    #unit_test_matrix_multiply(3, 3, 100)
+    unit_test_matrix_multiply(3, 3, 100)
     unit_test_matrix_scaling(3, 3, 100)
     unit_test_matrix_scale_by(3, 3, 100)
     unit_test_matrix_transpose(3, 3, 100)
