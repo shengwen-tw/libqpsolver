@@ -31,6 +31,7 @@ jobs:
           pip3 install setuptools
           pip3 install numpy
           pip3 install pybind11
+          pip3 install progressbar
           
           sudo apt install libsuitesparse-dev
           git clone https://github.com/cvxopt/cvxopt.git
