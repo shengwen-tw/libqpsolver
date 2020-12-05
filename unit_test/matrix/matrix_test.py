@@ -121,13 +121,45 @@ def matrix_compare(mat1, mat2):
     return True
 
 def generate_random_matrix(M, N, magnitude):
-    rand_mat = np.random.rand(M, N);
+    rand_mat = np.random.rand(M, N)
 
     for r in range(0, M):
         for c in range(0, N):
             rand_mat[r, c] = magnitude * rand_mat[r, c]
 
     return rand_mat
+
+def generate_random_psd_matrix(M, N, magnitude):
+    A = None
+    while True:
+        #randomly generate a matrix until it is full rank
+        A = generate_random_matrix(M, N, magnitude)
+        if np.linalg.matrix_rank(A) == M:
+            break;
+
+    A_transposed = np.transpose(A)
+
+    psd_mat = np.matmul(A, A_transposed)
+
+    return psd_mat
+
+def unit_test_matrix_inverse(M, N, magnitude):
+    mat = generate_random_psd_matrix(M, N, magnitude);
+
+    np_result = np.linalg.inv(mat)
+    my_result = matrix_wrapper.matrix_inverse(mat);
+
+    if verbose == True:
+        print('mat = \n%s' %(mat))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_inverse{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_inverse{bcolors.ENDC}")
+        exit(1)
 
 def unit_test_matrix_add(M, N, magnitude):
     mat1 = generate_random_matrix(M, N, magnitude);
@@ -287,6 +319,7 @@ def unit_test_matrix_rank(M, N, magnitude):
         exit(1)
 
 def unit_test_matrix_all_functions():
+    unit_test_matrix_inverse(3, 3, 100)
     unit_test_matrix_add(3, 3, 100)
     unit_test_matrix_add_by(3, 3, 100)
     unit_test_matrix_sub(3, 3, 100)
