@@ -1,24 +1,49 @@
-CC=gcc
+-include ../../config.mk
 
-MKL_PATH=/opt/intel/mkl
-MKL_LDFLAGS=$(MKL_PATH)/lib/intel64/libmkl_intel_lp64.so \
-	$(MKL_PATH)/lib/intel64/libmkl_sequential.so \
-	$(MKL_PATH)/lib/intel64/libmkl_core.so
+CXX=g++
 
-CFLAGS=
-CFLAGS+=-O3 -Wall -g
+TARGET=matrix_wrapper
+LIB_MATRIX_WRAPPER = $(TARGET)$(shell python3-config --extension-suffix)
 
-LDFLAGS=-lm
+LIB_MATRIX_WRAPPER_PATH=../..
 
-CFLAGS+=-I$(MKL_PATH)/include
-CFLAGS+=-I../../include
+CXXFLAGS+=-std=c++17 -O3 -g -Wall -Wno-unused-label -shared -fPIC
+CXXFLAGS+=`python3 -m pybind11 --includes`
 
-SRC=../../src/matrix.c
+CXXFLAGS+=-I$(MKL_PATH)/include
+CXXFLAGS+=-I$(LIB_MATRIX_WRAPPER_PATH)/include
 
-test_lapack: test_lapack.c $(SRC)
-	$(CC) $(CFLAGS) $^ $(MKL_LDFLAGS) $(LDFLAGS) -o $@
+LDFLAGS=$(MKL_LDFLAGS) -lm
+
+CSRC=matrix.c
+CXXSRC=pybind.cpp
+
+COBJS=$(CSRC:.c=.o)
+CXXOBJS=$(CXXSRC:.cpp=.o)
+
+CDEPEND=$(CSRC:.c=.d)
+CXXDEPEND=$(CXXSRC:.cpp=.d)
+
+$(LIB_MATRIX_WRAPPER): $(COBJS) $(CXXOBJS)
+	@echo "LD" $@
+	@$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+-include $(CDEPEND)
+-include $(CPPDEPEND)
+
+%.o: $(LIB_MATRIX_WRAPPER_PATH)/src/%.c
+	@echo "CXX" $@
+	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+%.o: %.cpp
+	@echo "CXX" $@
+	@$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 clean:
-	rm -rf test_lapack
+	rm -rf $(LIB_MATRIX_WRAPPER)
+	rm -rf $(COBJS)
+	rm -rf $(CXXOBJS)
+	rm -rf $(CDEPEND)
+	rm -rf $(CXXDEPEND)
 
-.PHONY: all clean
+.PHONY: clean
