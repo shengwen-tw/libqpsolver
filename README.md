@@ -2,7 +2,7 @@
 
 A quadratic programming solver library written in C
 
-<img src="https://github.com/shengwen-tw/libqpsolver/blob/master/materials/qp.png?raw=true" width="18%" height="18%">
+<img src="https://github.com/shengwen-tw/libqpsolver/blob/master/images/qp.png?raw=true" width="18%" height="18%">
 
 ## Algorithm
 
