@@ -237,42 +237,6 @@ pyarray my_solve_linear_system(pyarray A_np, pyarray B_np)
     return result;
 }
 
-pyarray my_matrix_qr_factorization_Q(pyarray A_np)
-{
-    matrix_t *A, *Q, *R;
-
-    convert_np_array_to_matrix(&A, A_np);
-    Q = matrix_new(A->row, A->column);
-    R = matrix_new(A->column, A->column);
-
-    matrix_qr_factorization(A, &Q, &R);
-
-    pyarray result = convert_np_array_to_matrix(Q);
-
-    matrix_delete(Q);
-    matrix_delete(R);
-
-    return result;
-}
-
-pyarray my_matrix_qr_factorization_R(pyarray A_np)
-{
-    matrix_t *A, *Q, *R;
-
-    convert_np_array_to_matrix(&A, A_np);
-    Q = matrix_new(A->row, A->column);
-    R = matrix_new(A->column, A->column);
-
-    matrix_qr_factorization(A, &Q, &R);
-
-    pyarray result = convert_np_array_to_matrix(R);
-
-    matrix_delete(Q);
-    matrix_delete(R);
-
-    return result;   
-}
-
 PYBIND11_MODULE(matrix_wrapper, matrix_tester)
 {
 	matrix_tester.doc() = "unit test of libqpsolver's matrix functions";
@@ -286,6 +250,4 @@ PYBIND11_MODULE(matrix_wrapper, matrix_tester)
 	matrix_tester.def("matrix_transpose", &my_matrix_transpose, "");
     matrix_tester.def("matrix_rank", &my_matrix_rank, "");
     matrix_tester.def("solve_linear_system", &my_solve_linear_system, "");
-    matrix_tester.def("qr_factorization_Q", &my_matrix_qr_factorization_Q, "");
-    matrix_tester.def("qr_factorization_R", &my_matrix_qr_factorization_R, "");
 }
