@@ -209,6 +209,46 @@ def unit_test_matrix_multiply(M, N, magnitude):
         print(f"{bcolors.FAIL}[failed] matrix_multiply{bcolors.ENDC}")
         exit(1)
 
+def unit_test_matrix_scale_by(M, N, magnitude):
+    mat = generate_random_matrix(M, N, magnitude);
+
+    scaler = 50
+
+    np_result = scaler * mat 
+    my_result = matrix_wrapper.matrix_scale_by(scaler, mat);
+
+    if verbose == True:
+        print('mat = \n%s' %(mat))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_scale_by{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_scale_by{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_scaling(M, N, magnitude):
+    mat = generate_random_matrix(M, N, magnitude);
+
+    scaler = 50
+
+    np_result = scaler * mat 
+    my_result = matrix_wrapper.matrix_scaling(scaler, mat);
+
+    if verbose == True:
+        print('mat = \n%s' %(mat))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_scaling{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_scaling{bcolors.ENDC}")
+        exit(1)
+
 def unit_test_matrix_transpose(M, N, magnitude):
     mat = generate_random_matrix(M, N, magnitude);
 
@@ -251,6 +291,8 @@ def unit_test_matrix_all_functions():
     unit_test_matrix_add_by(3, 3, 100)
     unit_test_matrix_sub(3, 3, 100)
     #unit_test_matrix_multiply(3, 3, 100)
+    unit_test_matrix_scaling(3, 3, 100)
+    unit_test_matrix_scale_by(3, 3, 100)
     unit_test_matrix_transpose(3, 3, 100)
     unit_test_matrix_rank(3, 3, 100)
 

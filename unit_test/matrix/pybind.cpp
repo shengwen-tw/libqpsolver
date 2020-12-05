@@ -165,7 +165,7 @@ pyarray my_matrix_scaling(double scaler, pyarray in_np)
 
     matrix_scaling(scaler, in, out);
 
-    pyarray result = convert_np_array_to_matrix(in);
+    pyarray result = convert_np_array_to_matrix(out);
 
     matrix_delete(in);
     matrix_delete(out);
