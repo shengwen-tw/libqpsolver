@@ -54,7 +54,12 @@ jobs:
            MKL_LIBS=$MKL_LIBS:$MKL_LIB_PATH/libmkl_sequential.so
            export LD_PRELOAD=$MKL_LIBS
            
-    - name: Run unit test
+    - name: Run unit test of linear algrebra functions
       run: |          
           cd libqpsolver
-          make unit_test
+          make unit_test_matrix
+              
+    - name: Run unit test of the quadratic programming solver
+      run: |          
+          cd libqpsolver
+          make unit_test_qp
