@@ -11,6 +11,8 @@ from cvxopt import matrix, solvers
 sol_diff_cnt = 0
 curr_test_num = 0
 
+verbose = False
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -32,7 +34,7 @@ def quadprog_cvxopt(P, q, A=None, b=None, A_eq=None, b_eq=None, options=None):
     """
 
     #verbose option
-    options = solvers.options['show_progress'] = True
+    options = solvers.options['show_progress'] = verbose
 
     #objective function
     P, q = matrix(P), matrix(q)
@@ -104,25 +106,31 @@ def test_random_2x2_qp_problem(cost_func_max_val):
         A_eq = np.array([[1.0, 1.0]])
         b_eq = np.array([[0.0]])
 
-    print('[Test input matrices]')
-    print('P = \n%s' %(P))
-    print('q = \n%s' %(q))
-    print('A = \n%s' %(A))
-    print('b = \n%s' %(b))
-    print('A_eq = \n%s' %(A_eq))
-    print('b_eq = \n%s\n' %(b_eq))
+    if verbose == True:
+        print('[Test input matrices]')
+        print('P = \n%s' %(P))
+        print('q = \n%s' %(q))
+        print('A = \n%s' %(A))
+        print('b = \n%s' %(b))
+        print('A_eq = \n%s' %(A_eq))
+        print('b_eq = \n%s\n' %(b_eq))
 
-    print('[debug message from CVXOPT]')
+    if verbose == True:
+        print('[debug message from CVXOPT]')
+
     cvxopt_sol = quadprog_cvxopt(P, q, A, b, A_eq, b_eq, None)
 
-    print('\n[debug message from libqpsolver]')
+    if verbose == True:
+        print('\n[debug message from libqpsolver]')
+
     libqpsolver_sol = libqpsolver.quadprog(P, q, A, b, A_eq, b_eq, None, None)
 
-    print('\n[Optimal solution by CVXOPT]')
-    print(cvxopt_sol)
+    if verbose == True:
+        print('\n[Optimal solution by CVXOPT]')
+        print(cvxopt_sol)
 
-    print('\n[Optimal solution by libqpsolver]')
-    print(libqpsolver_sol)
+        print('\n[Optimal solution by libqpsolver]')
+        print(libqpsolver_sol)
 
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
@@ -131,12 +139,15 @@ def test_random_2x2_qp_problem(cost_func_max_val):
     curr_test_num = curr_test_num + 1
 
     if test_result == True:
-        print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
     else:
-        print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
+        if verbose == True:
+            print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
         sol_diff_cnt = sol_diff_cnt + 1
 
-    print('===============================================================')
+    if verbose == True:
+        print('===============================================================')
 
     return test_result
 
@@ -165,25 +176,31 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
         A_eq = np.ones((1, N));
         b_eq = np.array([[0.0]])
 
-    print('[Test input matrices]')
-    print('P = \n%s' %(P))
-    print('q = \n%s' %(q))
-    print('A = \n%s' %(A))
-    print('b = \n%s' %(b))
-    print('A_eq = \n%s' %(A_eq))
-    print('b_eq = \n%s\n' %(b_eq))
+    if verbose == True:
+        print('[Test input matrices]')
+        print('P = \n%s' %(P))
+        print('q = \n%s' %(q))
+        print('A = \n%s' %(A))
+        print('b = \n%s' %(b))
+        print('A_eq = \n%s' %(A_eq))
+        print('b_eq = \n%s\n' %(b_eq))
 
-    print('[debug message from CVXOPT]')
+    if verbose == True:
+        print('[debug message from CVXOPT]')
+
     cvxopt_sol = quadprog_cvxopt(P, q, A, b, A_eq, b_eq, None)
 
-    print('\n[debug message from libqpsolver]')
+    if verbose == True:
+        print('\n[debug message from libqpsolver]')
+
     libqpsolver_sol = libqpsolver.quadprog(P, q, A, b, A_eq, b_eq, None, None)
 
-    print('\n[Optimal solution by CVXOPT]')
-    print(cvxopt_sol)
+    if verbose == True:
+        print('\n[Optimal solution by CVXOPT]')
+        print(cvxopt_sol)
 
-    print('\n[Optimal solution by libqpsolver]')
-    print(libqpsolver_sol)
+        print('\n[Optimal solution by libqpsolver]')
+        print(libqpsolver_sol)
 
     test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
 
@@ -192,12 +209,15 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
     curr_test_num = curr_test_num + 1
 
     if test_result == True:
-        print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}\n[unit test of #%d is passed]{bcolors.ENDC}" %(curr_test_num))
     else:
-        print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
+        if verbose == True:
+            print(f"{bcolors.FAIL}\n[unit test of #%d is failed]{bcolors.ENDC}" %(curr_test_num))
         sol_diff_cnt = sol_diff_cnt + 1
 
-    print('===============================================================')
+    if verbose == True:
+        print('===============================================================')
 
     return test_result
 
