@@ -10,12 +10,12 @@ import progressbar
 import numpy as np
 from cvxopt import matrix, solvers
 
-#unit test run time and test item numbers
-test_suite_exec_times = 10000
-test_suite_items = 13
-
 #show detailed unit test message
 verbose = False
+
+#unit test run time and test item numbers
+test_suite_exec_times = 1000
+test_suite_items = 13
 
 #global variables
 sol_diff_cnt = 0
@@ -236,7 +236,8 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
 
 
 def test_libqpsolver():
-    print(f"{bcolors.BOLD}libqpsolver unit test started{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}start the unit test of quadratic programming solver{bcolors.ENDC}")
+    print('test items: %d' %(test_suite_exec_times * test_suite_items))
 
     #progress bar
     progress.start()
@@ -276,6 +277,8 @@ def test_libqpsolver():
         test_random_NxN_qp_problem(50, 1000)
 
     progress.finish()
+    time_now = time.time()
+    print('elapsed time: %d seconds' %(time_now - time_start))
 
     total_test_times = test_suite_exec_times * 13
 

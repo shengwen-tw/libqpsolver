@@ -5,9 +5,21 @@ by launching the "run_test.sh"
 
 import matrix_wrapper
 import os
+import time
+import progressbar
 import numpy as np
 
+#show detailed unit test message
 verbose = False
+
+#unit test run time and test item numbers
+test_suite_exec_times = 50
+test_suite_items = 5
+
+progress_cnt_max = test_suite_exec_times * test_suite_items
+progress =  \
+    progressbar.ProgressBar(maxval=progress_cnt_max, \
+        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 
 class bcolors:
     HEADER = '\033[95m'
@@ -155,7 +167,8 @@ def unit_test_matrix_inverse(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_inverse{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_inverse{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_inverse{bcolors.ENDC}")
@@ -175,7 +188,8 @@ def unit_test_matrix_add(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_add{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_add{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_add{bcolors.ENDC}")
@@ -195,7 +209,8 @@ def unit_test_matrix_add_by(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_add_by{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_add_by{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_add_by{bcolors.ENDC}")
@@ -215,7 +230,8 @@ def unit_test_matrix_sub(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_sub{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_sub{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_sub{bcolors.ENDC}")
@@ -235,7 +251,8 @@ def unit_test_matrix_multiply(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_multiply{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_multiply{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_multiply{bcolors.ENDC}")
@@ -255,7 +272,8 @@ def unit_test_matrix_scale_by(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_scale_by{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_scale_by{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_scale_by{bcolors.ENDC}")
@@ -275,7 +293,8 @@ def unit_test_matrix_scaling(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_scaling{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_scaling{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_scaling{bcolors.ENDC}")
@@ -293,7 +312,8 @@ def unit_test_matrix_transpose(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(np_result, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] matrix_transpose{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_transpose{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_transpose{bcolors.ENDC}")
@@ -312,7 +332,8 @@ def unit_test_matrix_rank(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if np_result == my_result:
-        print(f"{bcolors.OKGREEN}[passed] matrix_rank{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] matrix_rank{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] matrix_rank{bcolors.ENDC}")
@@ -330,15 +351,17 @@ def unit_test_solve_linear_system(M, N, magnitude):
         print('my_result = \n%s' %(my_result))
 
     if matrix_compare(X, my_result) == True:
-        print(f"{bcolors.OKGREEN}[passed] solve_linear_system{bcolors.ENDC}")
+        if verbose == True:
+            print(f"{bcolors.OKGREEN}[passed] solve_linear_system{bcolors.ENDC}")
         return
     else:
         print(f"{bcolors.FAIL}[failed] solve_linear_system{bcolors.ENDC}")
         exit(1)
 
 def unit_test_matrix_all_functions(N, magnitude):
-    print(f"{bcolors.BOLD}unit test with %dx%d matrices, scale=%d{bcolors.ENDC}" \
-          %(N, N, magnitude));
+    if verbose == True:
+        print(f"{bcolors.BOLD}unit test with %dx%d matrices, scale=%d{bcolors.ENDC}" \
+              %(N, N, magnitude));
     unit_test_matrix_inverse(N, N, magnitude)
     unit_test_matrix_add(N, N, magnitude)
     unit_test_matrix_add_by(N, N, magnitude)
@@ -351,14 +374,37 @@ def unit_test_matrix_all_functions(N, magnitude):
     unit_test_solve_linear_system(N, N, magnitude)
 
 def main():
+    print(f"{bcolors.BOLD}start the unit test of linear algebra functions{bcolors.ENDC}")
+    print('test items: %d' %(test_suite_exec_times * test_suite_items))
+
+    #progress bar
+    progress.start()
+    progress.update(0)
+
+    time_start = time.time()
+    time_last = time_start
+
     #test_matrix_functions()
-    for N in range(2, 51):
-        unit_test_matrix_all_functions(N, 10)
-        unit_test_matrix_all_functions(N, 100)
-        unit_test_matrix_all_functions(N, 1000)
-        unit_test_matrix_all_functions(N, 10000)
-        unit_test_matrix_all_functions(N, 100000)
-    print("===========================================");
+    for i in range(test_suite_exec_times):
+        time_now = time.time()
+
+        #update the progress bar every 10 seconds
+        if (time_now - time_last) > 10:
+            time_last = time_now
+            progress.update(i * test_suite_items)
+            print('\nelapsed time: %d seconds' %(time_now - time_start))
+
+        for N in range(2, 51): #test from 2x2 to 50x50
+            unit_test_matrix_all_functions(N, 10)
+            unit_test_matrix_all_functions(N, 100)
+            unit_test_matrix_all_functions(N, 1000)
+            unit_test_matrix_all_functions(N, 10000)
+            unit_test_matrix_all_functions(N, 100000)
+
+    progress.finish()
+    time_now = time.time()
+    print('elapsed time: %d seconds' %(time_now - time_start))
+
     print(f"{bcolors.OKGREEN}[all passed]{bcolors.ENDC}")
 
 if __name__ == "__main__": main()
