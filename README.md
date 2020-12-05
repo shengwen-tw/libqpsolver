@@ -42,7 +42,7 @@ make example
 
 ## Unit test
 
-**Dependencies of unit test program**
+**Dependencies**
 
 ```
 pip3 install setuptools numpy pybind11 progressbar
@@ -62,6 +62,7 @@ make unit_test_matrix
 ```
 
 **Quadratic programming solver**
+
 The unit test launchs the solver to solve randomly generated QP problems and compare the results with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~13000) and may take minutes to complete.
 ```
 make unit_test_qp
