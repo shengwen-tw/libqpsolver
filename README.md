@@ -15,6 +15,11 @@ The libqpsolver use **Primal Interior Point Method** to solve quadratic programm
 3. Support infeasible start with basic phase1 method (Not yet been fully tested)
 4. Based on Intel Math Kernel Libray (Planed to support OpenBLAS in the future)
 
+## Caveats
+
+1. The solver is designed for soving small size problems (with optimization variable smaller than 50)
+2. The parameters need to be tweaked for the best performance and numerical stability depends on your own problems
+
 ## Prerequisite
 
 [Intel Math Kernel Library (MKL)](https://software.intel.com/content/www/us/en/develop/tools/performance-libraries.html)
