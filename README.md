@@ -42,8 +42,27 @@ make example
 
 ## Unit test
 
-The unit test launchs the solver to solve randomly generated QP problems several times (~10000) and compare the results with [CVXOPT](http://cvxopt.org/), it may take several minutes to complete the process.
+**Dependencies of unit test program**
 
 ```
-make unit_test
+pip3 install setuptools numpy pybind11 progressbar
+
+sudo apt install libsuitesparse-dev
+git clone https://github.com/cvxopt/cvxopt.git
+cd ./cvxopt
+sudo python3 setup.py install
+```
+
+**Linear algrebra functions**
+
+The program test the basic linear algebra functions underlying of the libqpsolver with randomly generated problems and compare the results with the [Numpy](https://numpy.org/). It is designed to run for several times (~250) and may take minutes to complete.
+
+```
+make unit_test_matrix
+```
+
+**Quadratic programming solver**
+The unit test launchs the solver to solve randomly generated QP problems and compare the results with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~13000) and may take minutes to complete.
+```
+make unit_test_qp
 ```
