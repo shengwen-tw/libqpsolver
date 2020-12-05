@@ -336,20 +336,29 @@ def unit_test_solve_linear_system(M, N, magnitude):
         print(f"{bcolors.FAIL}[failed] solve_linear_system{bcolors.ENDC}")
         exit(1)
 
-def unit_test_matrix_all_functions():
-    unit_test_matrix_inverse(3, 3, 100)
-    unit_test_matrix_add(3, 3, 100)
-    unit_test_matrix_add_by(3, 3, 100)
-    unit_test_matrix_sub(3, 3, 100)
-    unit_test_matrix_multiply(3, 3, 100)
-    unit_test_matrix_scaling(3, 3, 100)
-    unit_test_matrix_scale_by(3, 3, 100)
-    unit_test_matrix_transpose(3, 3, 100)
-    unit_test_matrix_rank(3, 3, 100)
-    unit_test_solve_linear_system(3, 3, 100)
+def unit_test_matrix_all_functions(N, magnitude):
+    print(f"{bcolors.BOLD}unit test with %dx%d matrices, scale=%d{bcolors.ENDC}" \
+          %(N, N, magnitude));
+    unit_test_matrix_inverse(N, N, magnitude)
+    unit_test_matrix_add(N, N, magnitude)
+    unit_test_matrix_add_by(N, N, magnitude)
+    unit_test_matrix_sub(N, N, magnitude)
+    unit_test_matrix_multiply(N, N, magnitude)
+    unit_test_matrix_scaling(N, N, magnitude)
+    unit_test_matrix_scale_by(N, N, magnitude)
+    unit_test_matrix_transpose(N, N, magnitude)
+    unit_test_matrix_rank(N, N, magnitude)
+    unit_test_solve_linear_system(N, N, magnitude)
 
 def main():
     #test_matrix_functions()
-    unit_test_matrix_all_functions()
+    for N in range(2, 51):
+        unit_test_matrix_all_functions(N, 10)
+        unit_test_matrix_all_functions(N, 100)
+        unit_test_matrix_all_functions(N, 1000)
+        unit_test_matrix_all_functions(N, 10000)
+        unit_test_matrix_all_functions(N, 100000)
+    print("===========================================");
+    print(f"{bcolors.OKGREEN}[all passed]{bcolors.ENDC}")
 
 if __name__ == "__main__": main()
