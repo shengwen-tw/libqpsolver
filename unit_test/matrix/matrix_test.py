@@ -7,6 +7,19 @@ import matrix_wrapper
 import os
 import numpy as np
 
+verbose = False
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def test_matrix_functions():
     ########################
     # solver linear system #
@@ -92,7 +105,157 @@ def test_matrix_functions():
     print('A = \n%s' %(A))
     print('The rank of matrix A is %d' %(rank));
 
+def matrix_compare(mat1, mat2):
+    if (mat1.shape[0] != mat2.shape[0]) or (mat1.shape[1] != mat2.shape[1]):
+        print('dimension of matrices are not equal for comparasion')
+        return False;
+
+    for i in range(mat1.shape[0]):
+        for j in range(mat1.shape[1]):
+            error_percentage = abs(mat1[i][j] - mat2[i][j]) / abs(mat1[i][j])
+
+        #tolerate 5% of error
+        if error_percentage > 0.05:
+            return False
+
+    return True
+
+def generate_random_matrix(M, N, magnitude):
+    rand_mat = np.random.rand(M, N);
+
+    for r in range(0, M):
+        for c in range(0, N):
+            rand_mat[r, c] = magnitude * rand_mat[r, c]
+
+    return rand_mat
+
+def unit_test_matrix_add(M, N, magnitude):
+    mat1 = generate_random_matrix(M, N, magnitude);
+    mat2 = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.add(mat1, mat2)
+    my_result = matrix_wrapper.matrix_add(mat1, mat2);
+
+    if verbose == True:
+        print('mat1 = \n%s' %(mat1))
+        print('mat2 = \n%s' %(mat2))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_add{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_add{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_add_by(M, N, magnitude):
+    mat1 = generate_random_matrix(M, N, magnitude);
+    mat2 = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.add(mat1, mat2)
+    my_result = matrix_wrapper.matrix_add_by(mat1, mat2);
+
+    if verbose == True:
+        print('mat1 = \n%s' %(mat1))
+        print('mat2 = \n%s' %(mat2))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_add_by{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_add_by{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_sub(M, N, magnitude):
+    mat1 = generate_random_matrix(M, N, magnitude);
+    mat2 = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.subtract(mat1, mat2)
+    my_result = matrix_wrapper.matrix_sub(mat1, mat2);
+
+    if verbose == True:
+        print('mat1 = \n%s' %(mat1))
+        print('mat2 = \n%s' %(mat2))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_sub{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_sub{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_multiply(M, N, magnitude):
+    mat1 = generate_random_matrix(M, N, magnitude);
+    mat2 = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.multiply(mat1, mat2)
+    my_result = matrix_wrapper.matrix_multiply(mat1, mat2);
+
+    if verbose == True:
+        print('mat1 = \n%s' %(mat1))
+        print('mat2 = \n%s' %(mat2))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_multiply{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_multiply{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_transpose(M, N, magnitude):
+    mat = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.transpose(mat)
+    my_result = matrix_wrapper.matrix_transpose(mat);
+
+    if verbose == True:
+        print('mat = \n%s' %(mat))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(np_result, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] matrix_transpose{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_transpose{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_rank(M, N, magnitude):
+    mat = generate_random_matrix(M, N, magnitude);
+
+    np_result = np.linalg.matrix_rank(mat)
+
+    my_result = matrix_wrapper.matrix_rank(mat);
+
+    if verbose == True:
+        print('mat = \n%s' %(mat))
+        print('np_result = \n%s' %(np_result))
+        print('my_result = \n%s' %(my_result))
+
+    if np_result == my_result:
+        print(f"{bcolors.OKGREEN}[passed] matrix_rank{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] matrix_rank{bcolors.ENDC}")
+        exit(1)
+
+def unit_test_matrix_all_functions():
+    unit_test_matrix_add(3, 3, 100)
+    unit_test_matrix_add_by(3, 3, 100)
+    unit_test_matrix_sub(3, 3, 100)
+    #unit_test_matrix_multiply(3, 3, 100)
+    unit_test_matrix_transpose(3, 3, 100)
+    unit_test_matrix_rank(3, 3, 100)
+
 def main():
-    test_matrix_functions()
+    #test_matrix_functions()
+    unit_test_matrix_all_functions()
 
 if __name__ == "__main__": main()
