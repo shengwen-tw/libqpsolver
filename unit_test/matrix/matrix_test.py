@@ -318,6 +318,24 @@ def unit_test_matrix_rank(M, N, magnitude):
         print(f"{bcolors.FAIL}[failed] matrix_rank{bcolors.ENDC}")
         exit(1)
 
+def unit_test_solve_linear_system(M, N, magnitude):
+    A = generate_random_psd_matrix(M, N, magnitude);
+    X = generate_random_matrix(M, N, magnitude);
+    B = np.matmul(A, X)
+
+    my_result = matrix_wrapper.solve_linear_system(A, B);
+
+    if verbose == True:
+        print('np_result = \n%s' %(X))
+        print('my_result = \n%s' %(my_result))
+
+    if matrix_compare(X, my_result) == True:
+        print(f"{bcolors.OKGREEN}[passed] solve_linear_system{bcolors.ENDC}")
+        return
+    else:
+        print(f"{bcolors.FAIL}[failed] solve_linear_system{bcolors.ENDC}")
+        exit(1)
+
 def unit_test_matrix_all_functions():
     unit_test_matrix_inverse(3, 3, 100)
     unit_test_matrix_add(3, 3, 100)
@@ -328,6 +346,7 @@ def unit_test_matrix_all_functions():
     unit_test_matrix_scale_by(3, 3, 100)
     unit_test_matrix_transpose(3, 3, 100)
     unit_test_matrix_rank(3, 3, 100)
+    unit_test_solve_linear_system(3, 3, 100)
 
 def main():
     #test_matrix_functions()
