@@ -345,12 +345,13 @@ def unit_test_solve_linear_system(M, N, magnitude):
     B = np.matmul(A, X)
 
     my_result = matrix_wrapper.solve_linear_system(A, B);
+    B_check = np.matmul(A, my_result)
 
     if verbose == True:
         print('np_result = \n%s' %(X))
         print('my_result = \n%s' %(my_result))
 
-    if matrix_compare(X, my_result) == True:
+    if matrix_compare(B, B_check) == True:
         if verbose == True:
             print(f"{bcolors.OKGREEN}[passed] solve_linear_system{bcolors.ENDC}")
         return
