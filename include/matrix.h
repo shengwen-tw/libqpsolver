@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include "libqpsolver.h"
 
-#define ELEMENTS(...) (double []){__VA_ARGS__}
-
 #define matrix_at(mat_ptr, r, c) (mat_ptr)->data[((r) * (mat_ptr)->column) + (c)]
 
 #define PRINT_MATRIX(mat) print_matrix(#mat, &mat)
