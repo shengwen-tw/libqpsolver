@@ -8,6 +8,7 @@ import os
 import time
 import progressbar
 import numpy as np
+from random import random
 from cvxopt import matrix, solvers
 
 #show detailed unit test message
@@ -83,7 +84,17 @@ def matrix_compare(mat1, mat2):
     return True
 
 def generate_symmetric_positive_definite_matrix(row, column, max_val):
-    vec = np.random.rand(row, column)
+    #vec = np.random.rand(row, column)
+
+    vec = np.ones((row, column))
+    for x in np.nditer(vec, op_flags=['readwrite']):
+        ran = 0
+        while True:
+            ran = max_val * random()
+            if ran > 0.1 * max_val:
+                break 
+        x[...] = ran
+
     vec_transposed = np.transpose(vec)
 
     spd_matrix = np.matmul(vec, vec_transposed)
@@ -248,6 +259,10 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
     #test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
     test_result = qp_cost_compare(cost_cvxopt, cost_libqpsolver)
 
+    if test_result == False:
+        print("libqpsolver cost = %f" %(cost_libqpsolver))
+        print("cvxopt cost = %f" %(cost_cvxopt))
+
     if verbose == True:
         print("libqpsolver cost = %f" %(cost_libqpsolver))
         print("cvxopt cost = %f" %(cost_cvxopt))
@@ -297,19 +312,19 @@ def test_libqpsolver():
         test_random_2x2_qp_problem(10000)
 
         #test 3x3 problems with simple constraints
-        test_random_NxN_qp_problem(3, 1000)
+        test_random_NxN_qp_problem(3, 100)
         test_random_NxN_qp_problem(3, 500)
         test_random_NxN_qp_problem(3, 1000)
         test_random_NxN_qp_problem(3, 10000)
 
         #test 15x15 problems with simple constraints
-        test_random_NxN_qp_problem(15, 1000)
+        test_random_NxN_qp_problem(15, 100)
         test_random_NxN_qp_problem(15, 500)
         test_random_NxN_qp_problem(15, 1000)
         test_random_NxN_qp_problem(15, 10000)
 
         #test 50x50 problems with simple constraints
-        test_random_NxN_qp_problem(50, 1000)
+        test_random_NxN_qp_problem(50, 10000)
 
     progress.finish()
     time_now = time.time()
