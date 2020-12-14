@@ -19,6 +19,10 @@ The libqpsolver use **Primal Interior Point Method** to solve quadratic programm
 
 1. The solver is designed for solving small size problems (with optimization variable smaller than 50)
 2. The parameters need to be tweaked for the best performance and numerical stability depends on your own problems
+3. The solver did not handle input coefficients with extremely different order ([reference to the problem](https://docs.mosek.com/7.0/capi/The_optimizers_for_continuous_problems.html))
+
+> Problems containing data with large and/or small coefficients, say 1.0e+9 or 1.0e-7 , are often hard to solve. Significant digits may be truncated in calculations with finite precision, which can result in the optimizer relying on inaccurate calculations. Since computers work in finite precision, extreme coefficients should be avoided. In general, data around the same “order of magnitude” is preferred, and we will refer to a problem, satisfying this loose property, as being well-scaled. If the problem is not well scaled, MOSEK will try to scale (multiply) constraints and variables by suitable constants. MOSEK solves the scaled problem to improve the numerical properties.
+
 
 ## Prerequisite
 
