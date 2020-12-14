@@ -161,12 +161,8 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 
 void matrix_copy(matrix_t *dest, matrix_t *src)
 {
-	int r, c;
-	for(r = 0; r < dest->row; r++) {
-		for(c = 0; c < dest->column; c++) {
-			matrix_at(dest, r, c) = matrix_at(src, r, c);
-		}
-	}
+    size_t size = dest->row * dest->column * sizeof(double);
+    memcpy(dest->data, src->data, size);
 }
 
 void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
