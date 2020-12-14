@@ -12,9 +12,4 @@
  *===========================================*/
 #define ENABLE_INFEASIBLE_START 1
 
-/*======================================================*
- * enable matrix/vector dimension check (for debugging) *
- *======================================================*/
-#define ENABLE_DIMENSION_CHECK  0
-
 #endif
