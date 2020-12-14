@@ -136,12 +136,8 @@ void matrix_delete(matrix_t *mat)
 
 void matrix_reset_zeros(matrix_t *mat)
 {
-	int r, c;
-	for(r = 0; r < mat->row; r++) {
-		for(c = 0; c < mat->column; c++) {
-			matrix_at(mat, r, c) = 0;
-		}
-	}
+	size_t size = mat->row * mat->column * sizeof(double);
+	memset(mat->data, 0, size);
 }
 
 void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
@@ -161,8 +157,8 @@ void matrix_inverse(matrix_t *mat, matrix_t *mat_inv)
 
 void matrix_copy(matrix_t *dest, matrix_t *src)
 {
-    size_t size = dest->row * dest->column * sizeof(double);
-    memcpy(dest->data, src->data, size);
+	size_t size = dest->row * dest->column * sizeof(double);
+	memcpy(dest->data, src->data, size);
 }
 
 void matrix_add(matrix_t *mat1, matrix_t *mat2, matrix_t *mat_result)
