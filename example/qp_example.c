@@ -29,29 +29,29 @@ int main(void)
 
 	//objective function
 	matrix_t P, q;
-	matrix_construct(&P, 2, 2, (double []){+1, -1,
+    matrix_construct(&P, 2, 2, (double []){+1, -1,
 		                                   -1, +2});
-	matrix_construct(&q, 2, 1, (double []){-2,
+    matrix_construct(&q, 2, 1, (double []){-2,
                                            -6});
 
 	//equaility constraint
 	matrix_t A_eq, b_eq;
-	matrix_construct(&A_eq, 1, 2, (double []){1, 1});
-	matrix_construct(&b_eq, 1, 1, (double []){0});
+    matrix_construct(&A_eq, 1, 2, (double []){1, 1});
+    matrix_construct(&b_eq, 1, 1, (double []){0});
 
 	//inequality constraints
 	vector_t lb, ub;
-	matrix_construct(&lb, 2, 1, (double []){-1,
+    matrix_construct(&lb, 2, 1, (double []){-1,
                                             -1});
 
-	matrix_construct(&ub, 2, 1, (double []){3.4,
+    matrix_construct(&ub, 2, 1, (double []){3.4,
                                             3.3});
 
 	matrix_t A, b;
-	matrix_construct(&A, 3, 2, (double []){+1, +1,
+    matrix_construct(&A, 3, 2, (double []){+1, +1,
                                            -1, +2,
                                            +2, +1});
-	matrix_construct(&b, 3, 1, (double []){2,
+    matrix_construct(&b, 3, 1, (double []){2,
                                            2,
                                            3});
 
