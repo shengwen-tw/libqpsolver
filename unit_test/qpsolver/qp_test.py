@@ -145,7 +145,11 @@ def test_random_2x2_qp_problem(cost_func_max_val):
         print('\n[Optimal solution by libqpsolver]')
         print(libqpsolver_sol)
 
-    test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
+    cost_libqpsolver = qp_cost_eval(libqpsolver_sol, P, q)
+    cost_cvxopt = qp_cost_eval(cvxopt_sol, P, q)
+
+    #test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
+    test_result = qp_cost_compare(cost_cvxopt, cost_libqpsolver)
 
     global sol_diff_cnt
     global curr_test_num
@@ -163,6 +167,29 @@ def test_random_2x2_qp_problem(cost_func_max_val):
         print('===============================================================')
 
     return test_result
+
+def qp_cost_eval(x, P, q):
+    xt = np.transpose(x)
+    Px = np.matmul(P, x)
+    xPx = np.matmul(xt, Px)
+    xPx = xPx / 2
+
+    qt = np.transpose(q)
+    qx = np.matmul(qt, x)
+
+    cost = xPx + qx
+
+    return cost
+
+def qp_cost_compare(cost_cvxopt, cost_libqpsolver):
+    abs_diff = abs(cost_cvxopt - cost_libqpsolver)
+    error_percentage = abs_diff / abs(cost_cvxopt)
+
+    #pass if difference is smaller than 10%
+    if(error_percentage < 0.1):
+        return True
+    else:
+        return False
 
 def test_random_NxN_qp_problem(N, cost_func_max_val):
     P = generate_symmetric_positive_definite_matrix(N, N, cost_func_max_val);
@@ -215,7 +242,15 @@ def test_random_NxN_qp_problem(N, cost_func_max_val):
         print('\n[Optimal solution by libqpsolver]')
         print(libqpsolver_sol)
 
-    test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
+    cost_libqpsolver = qp_cost_eval(libqpsolver_sol, P, q)
+    cost_cvxopt = qp_cost_eval(cvxopt_sol, P, q)
+
+    #test_result = matrix_compare(cvxopt_sol, libqpsolver_sol)
+    test_result = qp_cost_compare(cost_cvxopt, cost_libqpsolver)
+
+    if verbose == True:
+        print("libqpsolver cost = %f" %(cost_libqpsolver))
+        print("cvxopt cost = %f" %(cost_cvxopt))
 
     global sol_diff_cnt
     global curr_test_num
