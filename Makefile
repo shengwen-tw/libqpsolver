@@ -21,7 +21,7 @@ unit_test_matrix:
 	@./unit_test/matrix/run_test.sh
 
 astyle:
-	astyle --style=linux --indent=tab=4 --recursive "*.c,*.h"
+	astyle --style=linux --indent=tab=8 --recursive "*.c,*.h"
 
 clean:
 	@$(MAKE) -C ./src -f libqpsolver.mk clean

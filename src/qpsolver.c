@@ -199,7 +199,7 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	for(r = 0; r < qp->b_eq->row; r++) {
 		//copy b
 		matrix_at(qb_vec, r + qp->q->row, 0) =
-		    matrix_at(qp->b_eq, r, 0);
+		        matrix_at(qp->b_eq, r, 0);
 	}
 
 	/* construct the KKT matrix */
@@ -217,14 +217,14 @@ static void qp_solve_equality_constraint_problem(qp_t *qp)
 	for(r = 0; r < qp->A_eq->column; r++) {
 		for(c = 0; c < qp->A_eq->row; c++) {
 			matrix_at(KKT, r, (c + qp->A_eq->column)) =
-			    matrix_at(qp->A_eq, c, r);
+			        matrix_at(qp->A_eq, c, r);
 		}
 	}
 	//copy A
 	for(r = 0; r < qp->A_eq->row; r++) {
 		for(c = 0; c < qp->A_eq->column; c++) {
 			matrix_at(KKT, (r + qp->P->row), c) =
-			    matrix_at(qp->A_eq, r, c);
+			        matrix_at(qp->A_eq, r, c);
 		}
 	}
 	//set zero matrix
@@ -294,7 +294,7 @@ static double qp_phase1_cost_function(double t, matrix_t *x_prime,
 }
 
 static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
-        bool solve_upper_bound, bool solve_affine_inequality)
+                bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
@@ -359,10 +359,10 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 		for(r = 0; r < qp->A->row; r++) {
 			for(c = 0; c < qp->A->column; c++) {
 				matrix_at(A_inequality, r + lb_size + ub_size, c) =
-				    matrix_at(qp->A, r, c);
+				        matrix_at(qp->A, r, c);
 			}
 			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
-			    matrix_at(qp->b, r, 0);
+			        matrix_at(qp->b, r, 0);
 		}
 	}
 
@@ -436,7 +436,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi_x->row - 1; i++) {
 					matrix_at(D1_phi_x, i, 0) +=
-					    div_by_t * div_fi * matrix_at(A_inequality, r, i);
+					        div_by_t * div_fi * matrix_at(A_inequality, r, i);
 				}
 			}
 
@@ -486,8 +486,8 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 				matrix_scaling(-backtracking_t, D1_f0, descent_step);
 				matrix_add(x_prime_last, descent_step, x_prime);
 				bt_cost_now =
-				    qp_phase1_cost_function(t, x_prime, A_inequality,
-				                            b_inequality, qp->phase1.beta, s_min_now);
+				        qp_phase1_cost_function(t, x_prime, A_inequality,
+				                                b_inequality, qp->phase1.beta, s_min_now);
 
 				if(bt_cost_now <= bt_cost_alpha_line) {
 					break;
@@ -576,7 +576,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 }
 
 static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
-        bool solve_upper_bound, bool solve_affine_inequality)
+                bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] problem type: inequality constrained QP\n");
 
@@ -585,7 +585,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 	if(feasible == false) {
 		int phase1 = qp_inequality_constraint_phase1(qp, solve_lower_bound,
-		             solve_upper_bound, solve_affine_inequality);
+		                solve_upper_bound, solve_affine_inequality);
 
 		if(phase1 == QP_PHASE1_FEASIBLE) {
 			VERBOSE_PRINT("[solver] phase1 end, feasible start point found\n");
@@ -666,10 +666,10 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 		for(r = 0; r < qp->A->row; r++) {
 			for(c = 0; c < qp->A->column; c++) {
 				matrix_at(A_inequality, r + lb_size + ub_size, c) =
-				    matrix_at(qp->A, r, c);
+				        matrix_at(qp->A, r, c);
 			}
 			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
-			    matrix_at(qp->b, r, 0);
+			        matrix_at(qp->b, r, 0);
 		}
 	}
 
@@ -706,7 +706,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi->row; i++) {
 					matrix_at(D1_phi, i, 0) +=
-					    div_fi * matrix_at(A_inequality, r, i);
+					        div_fi * matrix_at(A_inequality, r, i);
 
 					matrix_at(D1_fi, i, 0) = matrix_at(A_inequality, r, i);
 				}
@@ -718,7 +718,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 				for(i = 0; i < D2_phi->row; i++) {
 					for(j = 0; j < D2_phi->column; j++) {
 						matrix_at(D2_phi, i, j) +=
-						    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+						        div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 					}
 				}
 			}
@@ -791,7 +791,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 }
 
 static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
-        bool solve_upper_bound, bool solve_affine_inequality)
+                bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] infeasible start point, phase1 start\n");
 
@@ -877,10 +877,10 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 		for(r = 0; r < qp->A->row; r++) {
 			for(c = 0; c < qp->A->column; c++) {
 				matrix_at(A_inequality, r + lb_size + ub_size, c) =
-				    matrix_at(qp->A, r, c);
+				        matrix_at(qp->A, r, c);
 			}
 			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
-			    matrix_at(qp->b, r, 0);
+			        matrix_at(qp->b, r, 0);
 		}
 	}
 
@@ -1008,7 +1008,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi_z->row - 1; i++) {
 					matrix_at(D1_phi_z, i, 0) +=
-					    div_by_t * div_fi * matrix_at(A_inequality, r, i);
+					        div_by_t * div_fi * matrix_at(A_inequality, r, i);
 				}
 			}
 			matrix_multiply(F_t, D1_phi_z, D1_phi_tilde_z);
@@ -1056,7 +1056,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
 			}
 			matrix_at(x_prime, x_prime->row - 1, 0) =
-			    matrix_at(z_prime, z_prime->row - 1, 0);
+			        matrix_at(z_prime, z_prime->row - 1, 0);
 
 			//f(x)
 			double bt_cost_origin = qp_phase1_cost_function(t, x_prime, A_inequality,
@@ -1093,12 +1093,12 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 					matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
 				}
 				matrix_at(x_prime, x_prime->row - 1, 0) =
-				    matrix_at(z_prime, z_prime->row - 1, 0);
+				        matrix_at(z_prime, z_prime->row - 1, 0);
 
 				//f(x + t * delta_x)
 				bt_cost_now =
-				    qp_phase1_cost_function(t, x_prime, A_inequality,
-				                            b_inequality, qp->phase1.beta, s_min_now);
+				        qp_phase1_cost_function(t, x_prime, A_inequality,
+				                                b_inequality, qp->phase1.beta, s_min_now);
 
 				if(bt_cost_now <= bt_cost_alpha_line) {
 					break;
@@ -1187,7 +1187,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 }
 
 static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve_lower_bound,
-        bool solve_upper_bound, bool solve_affine_inequality)
+                bool solve_upper_bound, bool solve_affine_inequality)
 {
 	VERBOSE_PRINT("[solver] problem type: equality and inequality constrained QP\n");
 
@@ -1196,7 +1196,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 
 	if(feasible == false) {
 		int phase1 = qp_equality_inequality_constraint_phase1(qp, solve_lower_bound,
-		             solve_upper_bound, solve_affine_inequality);
+		                solve_upper_bound, solve_affine_inequality);
 
 		if(phase1 == QP_PHASE1_FEASIBLE) {
 			VERBOSE_PRINT("[solver] phase1 end, feasible start point found\n");
@@ -1276,10 +1276,10 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		for(r = 0; r < qp->A->row; r++) {
 			for(c = 0; c < qp->A->column; c++) {
 				matrix_at(A_inequality, r + lb_size + ub_size, c) =
-				    matrix_at(qp->A, r, c);
+				        matrix_at(qp->A, r, c);
 			}
 			matrix_at(b_inequality, r + lb_size + ub_size, 0) =
-			    matrix_at(qp->b, r, 0);
+			        matrix_at(qp->b, r, 0);
 		}
 	}
 
@@ -1395,7 +1395,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				/* calculate first derivative of the log barrier function */
 				for(i = 0; i < D1_phi->row; i++) {
 					matrix_at(D1_phi, i, 0) +=
-					    div_fi * matrix_at(A_inequality, r, i);
+					        div_fi * matrix_at(A_inequality, r, i);
 
 					matrix_at(D1_fi, i, 0) = matrix_at(A_inequality, r, i);
 				}
@@ -1407,7 +1407,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 				for(i = 0; i < D2_phi->row; i++) {
 					for(j = 0; j < D2_phi->column; j++) {
 						matrix_at(D2_phi, i, j) +=
-						    div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
+						        div_fi_squared * matrix_at(D1_fi_D1_fi_t, i, j);
 					}
 				}
 			}
@@ -1541,7 +1541,7 @@ int qp_solve_start(qp_t *qp)
 	/* equality-inequality constrained optimization */
 	if(solve_equalities && solve_inequalities) {
 		qp_solve_equality_inequality_constraint_problem(qp, solve_lower_bound,
-		        solve_upper_bound, solve_affine_inequality);
+		                solve_upper_bound, solve_affine_inequality);
 	}
 
 	return QP_SUCCESS_SOLVED;
