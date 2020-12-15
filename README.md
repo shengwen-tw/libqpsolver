@@ -64,7 +64,7 @@ sudo python3 setup.py install
 
 **Run unit test of the linear algrebra functions**
 
-The program test the basic linear algebra functions underlying of the libqpsolver with randomly generated problems and compare the results with the [Numpy](https://numpy.org/). It is designed to run for several times (~250) and may take minutes to complete.
+The program test the basic linear algebra functions underlying of the libqpsolver with randomly generated problems and compare the results (cost) with the [Numpy](https://numpy.org/). It is designed to run for several times (~250) and may take minutes to complete.
 
 ```
 make unit_test_matrix
