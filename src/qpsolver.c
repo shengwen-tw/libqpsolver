@@ -34,7 +34,7 @@ void qp_set_default(qp_t *qp)
 	qp->phase2.iters = 0;
 	qp->phase2.eps = 1e-6;         //residual value to stop the gradient descent inner loop
 	qp->phase2.mu = 1.2;           //stiffness growth rate of the log barrier function
-	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier 
+	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier
 	qp->phase2.t_max = 10000;      //maximum stiffness of the log barrier
 	qp->phase2.max_iters = 10000;  //maximum iteration times
 }
@@ -786,6 +786,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	matrix_delete(D1_phi);
 	matrix_delete(D2_phi);
 	matrix_delete(newton_step);
+	matrix_delete(A_inequality);
 }
 
 static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
@@ -824,9 +825,17 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	matrix_t *z_prime_last = matrix_new(qp->x->row + 1, qp->x->column);
 
 	//vectos for evaulating the objective function during the backtracking line search
-	matrix_t *z = matrix_new(qp->x->row, qp->x->column);
-	matrix_t *Fz = matrix_new(qp->x->row, qp->x->column);
+	matrix_t z;
+	z.row = qp->x->row;
+	z.column = qp->x->column;
+	z.data = z_prime->data; //z and z prime share the same data buffer
+
 	matrix_t *x_prime = matrix_new(qp->x->row + 1, qp->x->column);
+
+	matrix_t Fz;
+	Fz.row = qp->x->row;
+	Fz.column = qp->x->column;
+	Fz.data = x_prime->data;
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_zeros(qp->x->row + 1, qp->x->column);
@@ -984,20 +993,15 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			/* first derivative of the objective function */
 			matrix_at(D1_f0, z_prime->row-1, 0) = 1;
 
-			//copy z from z_prime (XXX: this code could be optmized)
-			for(r = 0; r < z->row; r++) {
-				matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
-			}
-
 			//calculate x = Fz
-			matrix_multiply(F, z, Fz);
+			matrix_multiply(F, &z, &Fz);
 
 			/* first derivarive of z's inequality constraints */
 			for(r = 0; r < (A_inequality->row - 1); r++) {
 				/* calculate value of the inequality functions */
 				fi = 0;
 				for(j = 0; j < (A_inequality->column - 1); j++) {
-					fi += matrix_at(A_inequality, r, j) * matrix_at(Fz, j, 0);
+					fi += matrix_at(A_inequality, r, j) * matrix_at(&Fz, j, 0);
 				}
 				fi = fi - matrix_at(b_inequality, r, 0) -
 				     matrix_at(z_prime, z_prime->row-1, 0);
@@ -1041,18 +1045,13 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			double backtracking_t = 1.0f;
 			double bt_cost_now;
 
-			//copy z from z_prime (XXX: this code could be optmized)
-			for(r = 0; r < z->row; r++) {
-				matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
-			}
-
 			//calculate x = Fz
-			matrix_multiply(F, z, Fz);
+			matrix_multiply(F, &z, &Fz); //Fz shares the memory with x_prime
 
-			//x_prime = [Fz; s] (XXX: this code could be optmized)
-			for(r = 0; r < x_prime->row - 1; r++) {
-				matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
-			}
+			//x_prime = [Fz; s]
+			//for(r = 0; r < x_prime->row - 1; r++) {
+			//	matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
+			//}
 			matrix_at(x_prime, x_prime->row - 1, 0) =
 			        matrix_at(z_prime, z_prime->row - 1, 0);
 
@@ -1078,18 +1077,13 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				matrix_scaling(-backtracking_t, D1_f0, descent_step);
 				matrix_add(z_prime_last, descent_step, z_prime);
 
-				//copy z from z_prime (XXX: this code could be optmized)
-				for(r = 0; r < z->row; r++) {
-					matrix_at(z, r, 0) = matrix_at(z_prime, r, 0);
-				}
-
 				//x = Fz
-				matrix_multiply(F, z, Fz);
+				matrix_multiply(F, &z, &Fz); //Fz shares the memory with x_prime
 
-				//x_prime = [Fz; s] (XXX: this code could be optmized)
-				for(r = 0; r < x_prime->row - 1; r++) {
-					matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
-				}
+				//x_prime = [Fz; s]
+				//for(r = 0; r < x_prime->row - 1; r++) {
+				//	matrix_at(x_prime, r, 0) = matrix_at(Fz, r, 0);
+				//}
 				matrix_at(x_prime, x_prime->row - 1, 0) =
 				        matrix_at(z_prime, z_prime->row - 1, 0);
 
@@ -1118,7 +1112,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 			/* initial value of fi_max */
 			fi_max = 0;
 			for(j = 0; j < A_inequality->column - 1; j++) {
-				fi_max += matrix_at(A_inequality, 0, j) * matrix_at(Fz, j, 0);
+				fi_max += matrix_at(A_inequality, 0, j) * matrix_at(&Fz, j, 0);
 			}
 			fi_max -= matrix_at(b_inequality, 0, 0);
 
@@ -1127,7 +1121,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 				/* calculate value of the inequality functions */
 				fi = 0;
 				for(c = 0; c < A_inequality->column; c++) {
-					fi += matrix_at(A_inequality, r, c) * matrix_at(Fz, c, 0);
+					fi += matrix_at(A_inequality, r, c) * matrix_at(&Fz, c, 0);
 				}
 				fi -= matrix_at(b_inequality, r, 0);
 
@@ -1174,9 +1168,11 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 	matrix_delete(A_augment_b);
 	matrix_delete(z_prime);
 	matrix_delete(z_prime_last);
+	matrix_delete(x_prime);
 	matrix_delete(D1_f0);
 	matrix_delete(D1_phi_z);
 	matrix_delete(D1_phi_s);
+	matrix_delete(D1_phi_tilde_z);
 	matrix_delete(descent_step);
 	matrix_delete(A_inequality);
 	matrix_delete(b_inequality);
@@ -1481,6 +1477,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 		t *= qp->phase2.mu;
 	}
 
+	matrix_delete(EPSILON_matrix);
 	matrix_delete(D1_f0);
 	matrix_delete(D2_f0);
 	matrix_delete(D1_fi);
@@ -1502,6 +1499,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	matrix_delete(D2_f_tilde);
 	matrix_delete(D2_f0_F);
 	matrix_delete(D2_f_tilde_inv);
+	matrix_delete(A_eq_square );
 }
 
 int qp_solve_start(qp_t *qp)
