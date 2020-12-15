@@ -72,7 +72,7 @@ make unit_test_matrix
 
 **Run unit test of the quadratic programming solver**
 
-The unit test launchs the solver to solve randomly generated QP problems and compare the results with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~13000) and may take minutes to complete.
+The unit test launchs the solver to solve randomly generated QP problems and compare the results (cost) with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~12000) and may take minutes to complete.
 ```
 make unit_test_qp
 ```
