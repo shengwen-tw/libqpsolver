@@ -56,198 +56,198 @@ py::array_t<double> convert_np_array_to_matrix(matrix_t *mat)
 	unsigned long n_column = mat->column;
 
 	auto buf_info =
-	    py::buffer_info(mat->data,
-	                    sizeof(double),
-	                    py::format_descriptor<double>::format(),
-	                    2,
-	                    std::vector<size_t> {n_row, n_column},
-	                    std::vector<size_t> {n_column * sizeof(double), sizeof(double)}
-	                   );
+	        py::buffer_info(mat->data,
+	                        sizeof(double),
+	                        py::format_descriptor<double>::format(),
+	                        2,
+	                        std::vector<size_t> {n_row, n_column},
+	                        std::vector<size_t> {n_column * sizeof(double), sizeof(double)}
+	                       );
 	return py::array_t<double>(buf_info);
 }
 
 pyarray my_matrix_inverse(pyarray mat_np)
 {
-    matrix_t *mat;
-    convert_np_array_to_matrix(&mat, mat_np);
+	matrix_t *mat;
+	convert_np_array_to_matrix(&mat, mat_np);
 
-    matrix_t *mat_inv = matrix_new(mat->row, mat->column);
+	matrix_t *mat_inv = matrix_new(mat->row, mat->column);
 
-    matrix_inverse(mat, mat_inv);
+	matrix_inverse(mat, mat_inv);
 
-    pyarray result = convert_np_array_to_matrix(mat_inv);
+	pyarray result = convert_np_array_to_matrix(mat_inv);
 
-    matrix_delete(mat);
-    matrix_delete(mat_inv);
+	matrix_delete(mat);
+	matrix_delete(mat_inv);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_add(pyarray mat1_np, pyarray mat2_np)
 {
-    matrix_t *mat1, *mat2;
-    convert_np_array_to_matrix(&mat1, mat1_np);
-    convert_np_array_to_matrix(&mat2, mat2_np);
+	matrix_t *mat1, *mat2;
+	convert_np_array_to_matrix(&mat1, mat1_np);
+	convert_np_array_to_matrix(&mat2, mat2_np);
 
-    matrix_t *mat_result = matrix_new(mat1->row, mat1->column);
+	matrix_t *mat_result = matrix_new(mat1->row, mat1->column);
 
-    matrix_add(mat1, mat2, mat_result);
+	matrix_add(mat1, mat2, mat_result);
 
-    pyarray result = convert_np_array_to_matrix(mat_result);
+	pyarray result = convert_np_array_to_matrix(mat_result);
 
-    matrix_delete(mat1);
-    matrix_delete(mat2);
-    matrix_delete(mat_result);
+	matrix_delete(mat1);
+	matrix_delete(mat2);
+	matrix_delete(mat_result);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_add_by(pyarray lhs_np, pyarray rhs_np)
 {
-    matrix_t *lhs, *rhs;
-    convert_np_array_to_matrix(&lhs, lhs_np);
-    convert_np_array_to_matrix(&rhs, rhs_np);
+	matrix_t *lhs, *rhs;
+	convert_np_array_to_matrix(&lhs, lhs_np);
+	convert_np_array_to_matrix(&rhs, rhs_np);
 
-    matrix_add_by(lhs, rhs);
+	matrix_add_by(lhs, rhs);
 
-    pyarray result = convert_np_array_to_matrix(lhs);
+	pyarray result = convert_np_array_to_matrix(lhs);
 
-    matrix_delete(lhs);
-    matrix_delete(rhs);
+	matrix_delete(lhs);
+	matrix_delete(rhs);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_sub(pyarray mat1_np, pyarray mat2_np)
 {
-    matrix_t *mat1, *mat2, *mat_result;
+	matrix_t *mat1, *mat2, *mat_result;
 
-    convert_np_array_to_matrix(&mat1, mat1_np);
-    convert_np_array_to_matrix(&mat2, mat2_np);
-    mat_result = matrix_new(mat1->row, mat1->column);
+	convert_np_array_to_matrix(&mat1, mat1_np);
+	convert_np_array_to_matrix(&mat2, mat2_np);
+	mat_result = matrix_new(mat1->row, mat1->column);
 
-    matrix_sub(mat1, mat2, mat_result);
+	matrix_sub(mat1, mat2, mat_result);
 
-    pyarray result = convert_np_array_to_matrix(mat_result);
+	pyarray result = convert_np_array_to_matrix(mat_result);
 
-    matrix_delete(mat1);
-    matrix_delete(mat2);
-    matrix_delete(mat_result);
+	matrix_delete(mat1);
+	matrix_delete(mat2);
+	matrix_delete(mat_result);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_multiply(pyarray mat1_np, pyarray mat2_np)
 {
-    matrix_t *mat1, *mat2, *mat_result;
+	matrix_t *mat1, *mat2, *mat_result;
 
-    convert_np_array_to_matrix(&mat1, mat1_np);
-    convert_np_array_to_matrix(&mat2, mat2_np);
-    mat_result = matrix_new(mat1->row, mat2->column);
+	convert_np_array_to_matrix(&mat1, mat1_np);
+	convert_np_array_to_matrix(&mat2, mat2_np);
+	mat_result = matrix_new(mat1->row, mat2->column);
 
-    matrix_multiply(mat1, mat2, mat_result);
+	matrix_multiply(mat1, mat2, mat_result);
 
-    pyarray result = convert_np_array_to_matrix(mat_result);
+	pyarray result = convert_np_array_to_matrix(mat_result);
 
-    matrix_delete(mat1);
-    matrix_delete(mat2);
-    matrix_delete(mat_result);
+	matrix_delete(mat1);
+	matrix_delete(mat2);
+	matrix_delete(mat_result);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_scaling(double scaler, pyarray in_np)
 {
-    matrix_t *in, *out;
+	matrix_t *in, *out;
 
-    convert_np_array_to_matrix(&in, in_np);
-    out = matrix_new(in->row, in->column);
+	convert_np_array_to_matrix(&in, in_np);
+	out = matrix_new(in->row, in->column);
 
-    matrix_scaling(scaler, in, out);
+	matrix_scaling(scaler, in, out);
 
-    pyarray result = convert_np_array_to_matrix(out);
+	pyarray result = convert_np_array_to_matrix(out);
 
-    matrix_delete(in);
-    matrix_delete(out);
+	matrix_delete(in);
+	matrix_delete(out);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_scale_by(double scaler, pyarray mat_np)
 {
-    matrix_t *mat;
+	matrix_t *mat;
 
-    convert_np_array_to_matrix(&mat, mat_np);
+	convert_np_array_to_matrix(&mat, mat_np);
 
-    matrix_scale_by(scaler, mat);
+	matrix_scale_by(scaler, mat);
 
-    pyarray result = convert_np_array_to_matrix(mat);
+	pyarray result = convert_np_array_to_matrix(mat);
 
-    matrix_delete(mat);
+	matrix_delete(mat);
 
-    return result;
+	return result;
 }
 
 pyarray my_matrix_transpose(pyarray mat_np)
 {
-    matrix_t *mat, *trans_mat;
+	matrix_t *mat, *trans_mat;
 
-    convert_np_array_to_matrix(&mat, mat_np);
-    trans_mat = matrix_new(mat->column, mat->row);
+	convert_np_array_to_matrix(&mat, mat_np);
+	trans_mat = matrix_new(mat->column, mat->row);
 
-    matrix_transpose(mat, trans_mat);
+	matrix_transpose(mat, trans_mat);
 
-    pyarray result = convert_np_array_to_matrix(trans_mat);
+	pyarray result = convert_np_array_to_matrix(trans_mat);
 
-    matrix_delete(mat);
-    matrix_delete(trans_mat);
+	matrix_delete(mat);
+	matrix_delete(trans_mat);
 
-    return result;
+	return result;
 }
 
 int my_matrix_rank(pyarray mat_np)
 {
-    matrix_t *mat;
+	matrix_t *mat;
 
-    convert_np_array_to_matrix(&mat, mat_np);
+	convert_np_array_to_matrix(&mat, mat_np);
 
-    int rank = matrix_rank(mat);
+	int rank = matrix_rank(mat);
 
-    matrix_delete(mat);
+	matrix_delete(mat);
 
-    return rank;
+	return rank;
 }
 
 pyarray my_solve_linear_system(pyarray A_np, pyarray B_np)
 {
-    matrix_t *A, *X, *B;
+	matrix_t *A, *X, *B;
 
-    convert_np_array_to_matrix(&A, A_np);
-    X = matrix_new(A->column, A->column);
-    convert_np_array_to_matrix(&B, B_np);
+	convert_np_array_to_matrix(&A, A_np);
+	X = matrix_new(A->column, A->column);
+	convert_np_array_to_matrix(&B, B_np);
 
-    solve_linear_system(A, X, B);
+	solve_linear_system(A, X, B);
 
-    pyarray result = convert_np_array_to_matrix(X);
+	pyarray result = convert_np_array_to_matrix(X);
 
-    matrix_delete(A);
-    matrix_delete(X);
-    matrix_delete(B);
+	matrix_delete(A);
+	matrix_delete(X);
+	matrix_delete(B);
 
-    return result;
+	return result;
 }
 
-PYBIND11_MODULE(matrix_wrapper, matrix_tester)
+PYBIND11_MODULE(matrix_wrapper, mod)
 {
-	matrix_tester.doc() = "unit test of libqpsolver's matrix functions";
-	matrix_tester.def("matrix_inverse", &my_matrix_inverse, "");
-	matrix_tester.def("matrix_add", &my_matrix_add, "");
-	matrix_tester.def("matrix_add_by", &my_matrix_add_by, "");
-	matrix_tester.def("matrix_sub", &my_matrix_sub, "");
-	matrix_tester.def("matrix_multiply", &my_matrix_multiply, "");
-	matrix_tester.def("matrix_scaling", &my_matrix_scaling, "");
-	matrix_tester.def("matrix_scale_by", &my_matrix_scale_by, "");
-	matrix_tester.def("matrix_transpose", &my_matrix_transpose, "");
-    matrix_tester.def("matrix_rank", &my_matrix_rank, "");
-    matrix_tester.def("solve_linear_system", &my_solve_linear_system, "");
+	mod.doc() = "unit test of libqpsolver's matrix functions";
+	mod.def("matrix_inverse", &my_matrix_inverse, "");
+	mod.def("matrix_add", &my_matrix_add, "");
+	mod.def("matrix_add_by", &my_matrix_add_by, "");
+	mod.def("matrix_sub", &my_matrix_sub, "");
+	mod.def("matrix_multiply", &my_matrix_multiply, "");
+	mod.def("matrix_scaling", &my_matrix_scaling, "");
+	mod.def("matrix_scale_by", &my_matrix_scale_by, "");
+	mod.def("matrix_transpose", &my_matrix_transpose, "");
+	mod.def("matrix_rank", &my_matrix_rank, "");
+	mod.def("solve_linear_system", &my_solve_linear_system, "");
 }

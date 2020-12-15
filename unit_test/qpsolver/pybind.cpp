@@ -15,12 +15,12 @@ bool unit_test_debug_print = false;
 
 double time(void)
 {
-    static int sec = -1;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
+	static int sec = -1;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
 
-    if (sec < 0) sec = tv.tv_sec;
-    return (tv.tv_sec - sec) + 1.0e-6 * tv.tv_usec;
+	if (sec < 0) sec = tv.tv_sec;
+	return (tv.tv_sec - sec) + 1.0e-6 * tv.tv_usec;
 }
 
 void test_print_matrix(string prompt, matrix_t *mat)
@@ -66,20 +66,20 @@ py::array_t<double> convert_np_array_to_matrix(matrix_t *mat)
 	unsigned long n_column = mat->column;
 
 	auto buf_info =
-	    py::buffer_info(mat->data,
-	                    sizeof(double),
-	                    py::format_descriptor<double>::format(),
-	                    2,
-	                    std::vector<size_t> {n_row, n_column},
-	                    std::vector<size_t> {n_column * sizeof(double), sizeof(double)}
-	                   );
+	        py::buffer_info(mat->data,
+	                        sizeof(double),
+	                        py::format_descriptor<double>::format(),
+	                        2,
+	                        std::vector<size_t> {n_row, n_column},
+	                        std::vector<size_t> {n_column * sizeof(double), sizeof(double)}
+	                       );
 	return py::array_t<double>(buf_info);
 }
 
 py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
-                               pyarray A_numpy,    pyarray b_numpy,
-                               pyarray A_eq_numpy, pyarray b_eq_numpy,
-                               pyarray lb_numpy,   pyarray ub_numpy)
+                                pyarray A_numpy,    pyarray b_numpy,
+                                pyarray A_eq_numpy, pyarray b_eq_numpy,
+                                pyarray lb_numpy,   pyarray ub_numpy)
 {
 	matrix_t *x = NULL;
 	matrix_t *P = NULL;
@@ -140,31 +140,31 @@ py::array_t<double> my_quadprog(pyarray P_numpy,    pyarray q_numpy,
 		test_print_matrix("ub", ub);
 	}
 
-    double start_time = time();
-    int qp_ret = qp_solve_start(&qp);
-    double end_time = time();
+	double start_time = time();
+	int qp_ret = qp_solve_start(&qp);
+	double end_time = time();
 
 	if(unit_test_debug_print == true) {
-        if(qp_ret == QP_SUCCESS_SOLVED) {
-		    printf("the optimal solution of the problem is:\n");
-            test_print_matrix("x", x);
-        } else {
-            printf("unable to solve the problem!\n");
-        }
+		if(qp_ret == QP_SUCCESS_SOLVED) {
+			printf("the optimal solution of the problem is:\n");
+			test_print_matrix("x", x);
+		} else {
+			printf("unable to solve the problem!\n");
+		}
 	}
 
-    if(unit_test_debug_print == true) {
-        printf("run time: %lf seconds\n"
-               "phase1 stage took %d iterations\n"
-               "phase2 stage took %d iterations\n",
-               end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
-    }
+	if(unit_test_debug_print == true) {
+		printf("run time: %lf seconds\n"
+		       "phase1 stage took %d iterations\n"
+		       "phase2 stage took %d iterations\n",
+		       end_time - start_time, qp.phase1.iters, qp.phase2.iters + 1);
+	}
 
 	return convert_np_array_to_matrix(x);
 }
 
-PYBIND11_MODULE(libqpsolver, qp)
+PYBIND11_MODULE(libqpsolver, mod)
 {
-	qp.doc() = "libqpsolver, a quadratic programming library written in C";
-	qp.def("quadprog", &my_quadprog, "");
+	mod.doc() = "libqpsolver, a quadratic programming library written in C";
+	mod.def("quadprog", &my_quadprog, "");
 }
