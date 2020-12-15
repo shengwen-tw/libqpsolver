@@ -3,8 +3,7 @@
 #include <math.h>
 #include "qpsolver.h"
 
-/* prevent numerical instability from dividing by zero */
-#define EPSILON (1e-15)
+#define EPSILON (1e-30) //constant for increase the numerical stability
 
 void qp_set_default(qp_t *qp)
 {
@@ -19,23 +18,23 @@ void qp_set_default(qp_t *qp)
 	qp->b = NULL;
 
 	/* parameters of phase1 (feasibilty) solver */
-	qp->phase1.max_iters = 10000;
 	qp->phase1.iters = 0;
-	qp->phase1.eps = 1e-5;
-	qp->phase1.s_margin = 10;
-	qp->phase1.beta = -0.1;
-	qp->phase1.t_init = 0.05;
-	qp->phase1.t_max = 1000;
-	qp->phase1.mu = 2.0;
-	qp->phase1.backtracking_alpha = 0.25;
-	qp->phase1.backtracking_beta = 0.9;
+	qp->phase1.eps = 1e-5;        //residual value to stop the gradient descent inner loop
+	qp->phase1.s_margin = 10;     //extra margin for infeasible start
+	qp->phase1.beta = -0.1;       //minimum margin value
+	qp->phase1.t_init = 0.05;     //initial stiffness of the log barrier
+	qp->phase1.t_max = 1000;      //maximum stiffness of the log barrier
+	qp->phase1.mu = 2.0;          //stiffness growth rate of the log barrier function
+	qp->phase1.backtracking_alpha = 0.25; //alpha for backtracking line search
+	qp->phase1.backtracking_beta = 0.9;   //beta for backtracking line search
+	qp->phase1.max_iters = 10000; //maximum iteration times
 	//qp->phase1.step_size = 0.1;
 
 	/* parameters of phase2 (quadratic programming) solver */
 	qp->phase2.iters = 0;
 	qp->phase2.eps = 1e-6;         //residual value to stop the gradient descent inner loop
 	qp->phase2.mu = 1.2;           //stiffness growth rate of the log barrier function
-	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier (0.01)
+	qp->phase2.t_init = 0.0001;    //initial stiffness of the log barrier 
 	qp->phase2.t_max = 10000;      //maximum stiffness of the log barrier
 	qp->phase2.max_iters = 10000;  //maximum iteration times
 }
@@ -286,7 +285,7 @@ static double qp_phase1_cost_function(double t, matrix_t *x_prime,
 	fi = -matrix_at(x_prime, x_prime->row - 1, 0) + beta;
 	f -= div_by_t * log(-fi);
 
-	/* cost of log barrier function for limiting s not cross over s */
+	/* cost of log barrier function for limiting x not cross over s */
 	fi = -matrix_at(x_prime, x_prime->row - 1, 0) + s_min;
 	f -= div_by_t * log(-fi);
 
@@ -317,7 +316,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_zeros(qp->x->row + 1, qp->x->column);
 
-	//first derivative of the sumation of log barrier functions
+	//first derivative of the sumation of the log barrier functions
 	matrix_t *D1_phi_x = matrix_new(qp->x->row + 1, qp->x->column);
 	matrix_t *D1_phi_s = matrix_zeros(qp->x->row + 1, qp->x->column);
 
@@ -379,7 +378,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 
 	/* search for the largest fi_max */
 	for(r = 1; r < b_inequality->row - 1; r++) {
-		/* calculate value of the log barrier function */
+		/* calculate value of the inequality function */
 		fi = 0;
 		for(c = 0; c < A_inequality->column; c++) {
 			fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
@@ -515,7 +514,7 @@ static int qp_inequality_constraint_phase1(qp_t *qp, bool solve_lower_bound,
 
 			/* search for the largest fi_max */
 			for(r = 1; r < b_inequality->row - 1; r++) {
-				/* calculate value of the log barrier function */
+				/* calculate value of the inequality functions */
 				fi = 0;
 				for(c = 0; c < A_inequality->column; c++) {
 					fi += matrix_at(A_inequality, r, c) * matrix_at(x_prime, c, 0);
@@ -606,7 +605,6 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 
 	//save previous optimization result
 	matrix_t *x_last = matrix_new(qp->x->row, qp->x->column);
-	matrix_copy(x_last, qp->x);
 
 	//first derivative of the objective function
 	matrix_t *D1_f0 = matrix_new(qp->x->row, qp->x->column);
@@ -622,7 +620,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 	//D[fi(x)] * D[fi(x)].'
 	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
 
-	//first derivative of the sumation of log barrier functions
+	//first derivative of the sumation of the log barrier functions
 	matrix_t *D1_phi = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the summation of the log barrier functions
 	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
@@ -694,7 +692,7 @@ static void qp_solve_inequality_constraint_problem(qp_t *qp, bool solve_lower_bo
 			 *=======================================================*/
 
 			for(r = 0; r < A_inequality->row; r++) {
-				/* calculate value of the log barrier function */
+				/* calculate value of the inequality functions */
 				fi = 0;
 				for(j = 0; j < A_inequality->column; j++) {
 					fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
@@ -943,7 +941,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 	/* search for the largest fi_max */
 	for(r = 1; r < b_inequality->row - 1; r++) {
-		/* calculate value of the log barrier function */
+		/* calculate value of the inequality functions */
 		fi = 0;
 		for(c = 0; c < A_inequality->column; c++) {
 			fi += matrix_at(A_inequality, r, c) * matrix_at(qp->x, c, 0);
@@ -1126,7 +1124,7 @@ static int qp_equality_inequality_constraint_phase1(qp_t *qp, bool solve_lower_b
 
 			/* search for the largest fi_max */
 			for(r = 1; r < b_inequality->row - 1; r++) {
-				/* calculate value of the log barrier function */
+				/* calculate value of the inequality functions */
 				fi = 0;
 				for(c = 0; c < A_inequality->column; c++) {
 					fi += matrix_at(A_inequality, r, c) * matrix_at(Fz, c, 0);
@@ -1235,7 +1233,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 	//D[fi(x)] * D[fi(x)].'
 	matrix_t *D1_fi_D1_fi_t = matrix_new(qp->x->row, qp->x->row);
 
-	//first derivative of the sumation of log barrier functions
+	//first derivative of the summation of the log barrier functions
 	matrix_t *D1_phi = matrix_new(qp->x->row, qp->x->column);
 	//second derivative of the summation of the log barrier functions
 	matrix_t *D2_phi = matrix_new(qp->x->row, qp->x->row);
@@ -1383,7 +1381,7 @@ static void qp_solve_equality_inequality_constraint_problem(qp_t *qp, bool solve
 			 *=======================================================*/
 
 			for(r = 0; r < A_inequality->row; r++) {
-				/* calculate value of the log barrier function */
+				/* calculate value of the inequality functions */
 				fi = 0;
 				for(j = 0; j < A_inequality->column; j++) {
 					fi += matrix_at(A_inequality, r, j) * matrix_at(qp->x, j, 0);
