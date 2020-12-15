@@ -64,7 +64,7 @@ sudo python3 setup.py install
 
 **Run unit test of the linear algrebra functions**
 
-The program test the basic linear algebra functions underlying of the libqpsolver with randomly generated problems and compare the results (cost) with the [Numpy](https://numpy.org/). It is designed to run for several times (~250) and may take minutes to complete.
+The program test the basic linear algebra functions underlying of the libqpsolver with randomly generated problems and compare the results with the [Numpy](https://numpy.org/). It is designed to run for several times (~250) and may take minutes to complete.
 
 ```
 make unit_test_matrix
@@ -72,7 +72,7 @@ make unit_test_matrix
 
 **Run unit test of the quadratic programming solver**
 
-The unit test launchs the solver to solve randomly generated QP problems and compare the results with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~12000) and may take minutes to complete.
+The unit test launchs the solver to solve randomly generated QP problems and compare the results (cost) with [CVXOPT](http://cvxopt.org/). It is designed to run for several times (~12000) and may take minutes to complete.
 ```
 make unit_test_qp
 ```
