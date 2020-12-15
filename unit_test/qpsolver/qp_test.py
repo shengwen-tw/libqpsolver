@@ -16,7 +16,7 @@ verbose = False
 
 #unit test run time and test item numbers
 test_suite_exec_times = 1000
-test_suite_items = 13
+test_suite_items = 12
 
 #global variables
 sol_diff_cnt = 0
@@ -305,12 +305,6 @@ def test_libqpsolver():
             progress.update(i * test_suite_items)
             print('\nelapsed time: %d seconds' %(time_now - time_start))
 
-        #test my specified 2x2 problems
-        test_random_2x2_qp_problem(100)
-        test_random_2x2_qp_problem(500)
-        test_random_2x2_qp_problem(1000)
-        test_random_2x2_qp_problem(10000)
-
         #test 3x3 problems with simple constraints
         test_random_NxN_qp_problem(3, 100)
         test_random_NxN_qp_problem(3, 500)
@@ -324,21 +318,24 @@ def test_libqpsolver():
         test_random_NxN_qp_problem(15, 10000)
 
         #test 50x50 problems with simple constraints
+        test_random_NxN_qp_problem(50, 100)
+        test_random_NxN_qp_problem(50, 500)
+        test_random_NxN_qp_problem(50, 1000)
         test_random_NxN_qp_problem(50, 10000)
 
     progress.finish()
     time_now = time.time()
     print('elapsed time: %d seconds' %(time_now - time_start))
 
-    total_test_times = test_suite_exec_times * 13
+    total_test_times = test_suite_items * test_suite_exec_times
 
     correctness = (1.0 - (sol_diff_cnt / total_test_times)) * 100.0
 
     print(f"{bcolors.BOLD}unit test total run times = %d{bcolors.ENDC}" %(total_test_times))
     print(f"-> %d of %d failed" %(sol_diff_cnt, total_test_times))
 
-    #if error count exceed 1% of total test count, than the solver is not stable
-    if (sol_diff_cnt / total_test_times) > 0.01:
+    #if error count exceed 0.1% of total test count, than the solver is not stable
+    if (sol_diff_cnt / total_test_times) > 0.001:
         print(f"{bcolors.FAIL}[failed] correctness = %f%%{bcolors.ENDC}" %(correctness))
         print(f"{bcolors.FAIL}the solver is unstable due to the correctness is lower than 99%{bcolors.ENDC}")
         exit(1)
